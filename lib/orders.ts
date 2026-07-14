@@ -3,6 +3,7 @@ import { getSupabase } from "@/lib/supabase";
 import {
   actionToTargetState,
   canTransition,
+  eventAction,
   isTerminal,
   toCents,
   type OrderState,
@@ -42,7 +43,7 @@ export async function advanceOrderState(
   orderId: string,
   event: WhopWebhookRequestBody,
 ): Promise<AdvanceResult> {
-  const target = actionToTargetState(event.action);
+  const target = actionToTargetState(eventAction(event));
   if (!target) {
     return { applied: false, from: null, to: null, reason: "no_state_mapping" };
   }
@@ -123,16 +124,19 @@ export async function transitionOrder(
 
 /** Persist payment/refund facts alongside the state change (immutable patch). */
 function buildPatch(event: WhopWebhookRequestBody): Record<string, unknown> {
+  const action = eventAction(event);
   if (
-    event.action === "payment.succeeded" ||
-    event.action === "app_payment.succeeded"
+    action === "payment.succeeded" ||
+    action === "payment_succeeded" ||
+    action === "app_payment.succeeded"
   ) {
+    const data = event.data as { id?: string; final_amount?: number };
     return {
-      whop_payment_id: event.data.id,
-      amount_cents: toCents(event.data.final_amount),
+      whop_payment_id: data.id,
+      amount_cents: toCents(data.final_amount),
     };
   }
-  if (event.action === "refund.created" || event.action === "refund.updated") {
+  if (action.startsWith("refund.") || action.startsWith("refund_")) {
     const { refundId, refundedAmountCents } = extractRefundInfo(event);
     return {
       ...(refundId ? { whop_refund_id: refundId } : {}),

@@ -1,6 +1,7 @@
 import { getWebhookValidator } from "@/lib/whop";
 import { getSupabase } from "@/lib/supabase";
 import { processEvent } from "@/lib/process-event";
+import { eventAction } from "@/lib/state-machine";
 import type { WhopWebhookRequestBody } from "@whop/api";
 
 /**
@@ -55,7 +56,8 @@ export async function POST(req: Request): Promise<Response> {
   const supabase = getSupabase();
   const { error: insertError } = await supabase.from("webhook_events").insert({
     id: eventId,
-    type: event.action,
+    // Normalized: v1 REST events name this `type`, app webhooks `action`.
+    type: eventAction(event),
     payload: event as unknown as Record<string, unknown>,
     signature_valid: true,
     processed: false,

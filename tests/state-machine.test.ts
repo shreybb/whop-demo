@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   canTransition,
   actionToTargetState,
+  eventAction,
   toCents,
   isTerminal,
   CHAIN,
@@ -64,4 +65,23 @@ test("toCents converts decimal currency amounts to integer cents", () => {
   assert.equal(toCents(null), null);
   assert.equal(toCents(undefined), null);
   assert.equal(toCents(NaN), null);
+});
+
+test("v1 REST underscore actions map identically to dotted app-webhook actions", () => {
+  assert.equal(actionToTargetState("payment_succeeded"), "paid");
+  assert.equal(actionToTargetState("payment_failed"), "failed");
+  assert.equal(actionToTargetState("refund_created"), "refunded");
+  assert.equal(actionToTargetState("refund_updated"), "refunded");
+  // Unmapped v1 events no-op, same as unknown dotted ones.
+  assert.equal(actionToTargetState("withdrawal_updated"), null);
+  assert.equal(actionToTargetState("payout_account_status_updated"), null);
+});
+
+test("eventAction normalizes action/type/event fields and tolerates junk", () => {
+  assert.equal(eventAction({ action: "payment.succeeded" }), "payment.succeeded");
+  assert.equal(eventAction({ type: "payment_succeeded" }), "payment_succeeded");
+  assert.equal(eventAction({ event: "refund_created" }), "refund_created");
+  assert.equal(eventAction({}), "unknown");
+  assert.equal(eventAction(null), "unknown");
+  assert.equal(eventAction({ action: 42 }), "unknown");
 });
