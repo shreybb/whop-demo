@@ -16,6 +16,8 @@ import { OrderActions } from "./_components/order-actions";
 import { WebhookRow } from "./_components/webhook-row";
 import { SellerActions } from "./_components/seller-actions";
 import { ListingActions } from "./_components/listing-actions";
+import { NewSellerForm } from "./_components/new-seller-form";
+import { NewListingForm } from "./_components/new-listing-form";
 
 // Always render fresh — this is an operational console.
 export const dynamic = "force-dynamic";
@@ -80,6 +82,7 @@ export default async function DashboardPage() {
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">
           <h2 className="text-lg font-medium">Sellers</h2>
+          <NewSellerForm />
           <Card>
             <table className="w-full text-sm">
               <thead>
@@ -114,7 +117,6 @@ export default async function DashboardPage() {
                       <SellerActions
                         sellerId={s.id}
                         hasAccount={Boolean(s.whop_company_id)}
-                        defaultEmail={s.email}
                       />
                     </td>
                   </tr>
@@ -126,6 +128,7 @@ export default async function DashboardPage() {
 
         <div className="space-y-3">
           <h2 className="text-lg font-medium">Listings</h2>
+          <NewListingForm sellers={sellers.map((s) => ({ id: s.id, name: s.name }))} />
           <Card>
             <table className="w-full text-sm">
               <thead>

@@ -11,11 +11,9 @@ import {
 export function SellerActions({
   sellerId,
   hasAccount,
-  defaultEmail,
 }: {
   sellerId: string;
   hasAccount: boolean;
-  defaultEmail: string;
 }) {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<Result | null>(null);
@@ -28,21 +26,11 @@ export function SellerActions({
     });
   }
 
-  function onboard() {
-    // Whop needs a real, deliverable owner email for the connected account.
-    const email = window.prompt(
-      "Owner email for the Whop connected account (must accept mail):",
-      defaultEmail,
-    );
-    if (email === null) return; // cancelled
-    run(() => onboardSeller(sellerId, email));
-  }
-
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex flex-wrap justify-end gap-1">
         {!hasAccount ? (
-          <Btn disabled={pending} onClick={onboard}>
+          <Btn disabled={pending} onClick={() => run(() => onboardSeller(sellerId))}>
             Onboard on Whop
           </Btn>
         ) : (

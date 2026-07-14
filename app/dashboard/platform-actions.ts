@@ -18,6 +18,44 @@ export interface Result {
   url?: string;
 }
 
+/** Add a seller the marketplace owner entered (name + email). Not yet onboarded. */
+export async function createSeller(name: string, email: string): Promise<Result> {
+  const trimmedName = name?.trim();
+  const trimmedEmail = email?.trim();
+  if (!trimmedName || !trimmedEmail) {
+    return fail("Name and a deliverable email are required.");
+  }
+  const { error } = await getSupabase()
+    .from("sellers")
+    .insert({ name: trimmedName, email: trimmedEmail, payout_status: "not_started" });
+  if (error) return fail(error.message);
+  revalidatePath("/dashboard");
+  return { ok: true, message: `Added ${trimmedName}.` };
+}
+
+/** Add a listing for a seller (price entered in dollars). */
+export async function createListing(
+  sellerId: string,
+  title: string,
+  priceDollars: number,
+  currency = "usd",
+): Promise<Result> {
+  if (!sellerId) return fail("Pick a seller.");
+  if (!title?.trim()) return fail("Title is required.");
+  const price = Number(priceDollars);
+  if (!Number.isFinite(price) || price <= 0) return fail("Enter a valid price.");
+
+  const { error } = await getSupabase().from("listings").insert({
+    seller_id: sellerId,
+    title: title.trim(),
+    price_cents: Math.round(price * 100),
+    currency,
+  });
+  if (error) return fail(error.message);
+  revalidatePath("/dashboard");
+  return { ok: true, message: `Added "${title.trim()}".` };
+}
+
 /** Component 2: create a connected account for a seller and store its id. */
 export async function onboardSeller(
   sellerId: string,
