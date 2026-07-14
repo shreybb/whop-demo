@@ -114,6 +114,7 @@ export default async function DashboardPage() {
                       <SellerActions
                         sellerId={s.id}
                         hasAccount={Boolean(s.whop_company_id)}
+                        defaultEmail={s.email}
                       />
                     </td>
                   </tr>

@@ -19,7 +19,10 @@ export interface Result {
 }
 
 /** Component 2: create a connected account for a seller and store its id. */
-export async function onboardSeller(sellerId: string): Promise<Result> {
+export async function onboardSeller(
+  sellerId: string,
+  ownerEmail?: string,
+): Promise<Result> {
   const supabase = getSupabase();
   const { data: seller, error } = await supabase
     .from("sellers")
@@ -30,10 +33,14 @@ export async function onboardSeller(sellerId: string): Promise<Result> {
   if (!seller) return fail("Seller not found.");
   if (seller.whop_company_id) return fail("Seller already onboarded.");
 
+  // Whop requires the connected-account owner email to be a real, deliverable
+  // inbox. Prefer the email entered at onboarding time; fall back to the seller's.
+  const email = (ownerEmail && ownerEmail.trim()) || seller.email;
+
   try {
     const { companyId } = await createConnectedAccount({
       name: seller.name,
-      email: seller.email,
+      email,
     });
     await supabase
       .from("sellers")

@@ -84,6 +84,11 @@ export async function createListingProductAndPlan(input: {
     const plan = await rest.plans.create({
       company_id: env.whopCompanyId(),
       product_id: product.id,
+      // One-time (single charge). Omitting plan_type defaults to "renewal",
+      // which then requires a non-zero billing_period. `initial_price` is the
+      // full price for a one-time plan; no renewal_price/billing_period.
+      plan_type: "one_time",
+      release_method: "buy_now",
       currency: input.currency as never,
       initial_price: input.priceCents / 100, // Whop uses decimal currency units
       description: input.description ?? undefined,
