@@ -14,10 +14,6 @@ import { formatMoney, formatDateTime, shortId } from "@/lib/format";
 import { StateBadge, PayoutBadge, PayoutStatusBadge } from "@/app/_components/state-badge";
 import { OrderActions } from "./_components/order-actions";
 import { WebhookRow } from "./_components/webhook-row";
-import { SellerActions } from "./_components/seller-actions";
-import { ListingActions } from "./_components/listing-actions";
-import { NewSellerForm } from "./_components/new-seller-form";
-import { NewListingForm } from "./_components/new-listing-form";
 
 // Always render fresh — this is an operational console.
 export const dynamic = "force-dynamic";
@@ -84,7 +80,6 @@ export default async function DashboardPage() {
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">
           <h2 className="text-lg font-medium">Sellers</h2>
-          <NewSellerForm />
           <Card>
             <table className="w-full text-sm">
               <thead>
@@ -92,14 +87,13 @@ export default async function DashboardPage() {
                   <Th>Seller</Th>
                   <Th>Connected acct</Th>
                   <Th>Payout</Th>
-                  <Th className="text-right">Actions</Th>
                 </tr>
               </thead>
               <tbody>
                 {sellers.length === 0 && !loadError && (
                   <tr>
-                    <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
-                      No sellers yet — they sign up self-serve, or add one manually above.
+                    <td colSpan={3} className="px-3 py-6 text-center text-muted-foreground">
+                      No sellers yet — they sign up self-serve at /login.
                     </td>
                   </tr>
                 )}
@@ -115,12 +109,6 @@ export default async function DashboardPage() {
                     <td className="px-3 py-2">
                       <PayoutBadge status={s.payout_status} />
                     </td>
-                    <td className="px-3 py-2 text-right">
-                      <SellerActions
-                        sellerId={s.id}
-                        hasAccount={Boolean(s.whop_company_id)}
-                      />
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -130,7 +118,6 @@ export default async function DashboardPage() {
 
         <div className="space-y-3">
           <h2 className="text-lg font-medium">Listings</h2>
-          <NewListingForm sellers={sellers.map((s) => ({ id: s.id, name: s.name }))} />
           <Card>
             <table className="w-full text-sm">
               <thead>
@@ -138,14 +125,14 @@ export default async function DashboardPage() {
                   <Th>Listing</Th>
                   <Th>Seller</Th>
                   <Th>Price</Th>
-                  <Th className="text-right">Actions</Th>
+                  <Th>Status</Th>
                 </tr>
               </thead>
               <tbody>
                 {listings.length === 0 && !loadError && (
                   <tr>
                     <td colSpan={4} className="px-3 py-6 text-center text-muted-foreground">
-                      No listings yet — sellers create their own, or draft one above.
+                      No listings yet — sellers create their own in the portal.
                     </td>
                   </tr>
                 )}
@@ -154,11 +141,8 @@ export default async function DashboardPage() {
                     <td className="px-3 py-2">{l.title}</td>
                     <td className="px-3 py-2">{l.seller?.name ?? "—"}</td>
                     <td className="px-3 py-2">{formatMoney(l.price_cents, l.currency)}</td>
-                    <td className="px-3 py-2 text-right">
-                      <ListingActions
-                        listingId={l.id}
-                        published={Boolean(l.whop_plan_id)}
-                      />
+                    <td className="px-3 py-2 text-xs text-muted-foreground">
+                      {l.whop_plan_id ? "live" : "draft"}
                     </td>
                   </tr>
                 ))}

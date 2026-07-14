@@ -25,11 +25,8 @@ cp .env.example .env      # then fill in the values (see "Environment" below)
 # 3. Create the schema
 #    Paste supabase/schema.sql into the Supabase SQL editor (or psql) and run it.
 
-# 4. Seed demo sellers / listings / a sample order
-npm run seed
-
-# 5. Run
-npm run dev               # dashboard at http://localhost:3000/dashboard
+# 4. Run
+npm run dev               # marketplace at http://localhost:3000 (admin at /admin)
 
 # Checks
 npm run typecheck

@@ -1,10 +1,6 @@
 import Link from "next/link";
-import {
-  getMySeller,
-  getMySellerOrders,
-  getMyPayouts,
-  computeSellerStats,
-} from "@/lib/seller";
+import { getMySeller, getMySellerOrders, getMyPayouts } from "@/lib/seller";
+import { computeSellerStats } from "@/lib/seller-stats";
 import { formatMoney } from "@/lib/format";
 import { PayoutBadge, StateBadge } from "@/app/_components/state-badge";
 import { OnboardingCard } from "./_components/onboarding-card";

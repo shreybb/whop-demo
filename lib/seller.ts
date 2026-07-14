@@ -100,5 +100,3 @@ export async function getMyPayouts(): Promise<MyPayout[]> {
   return (data ?? []) as MyPayout[];
 }
 
-// Dashboard math lives in lib/seller-stats.ts (pure, unit-tested).
-export { computeSellerStats, type SellerStats } from "@/lib/seller-stats";

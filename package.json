@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test tests/*.test.ts",
-    "seed": "tsx scripts/seed.ts"
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.3",

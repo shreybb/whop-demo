@@ -13,7 +13,7 @@ import { createServerClient } from "@supabase/ssr";
  * Each section's layout calls `requireRole()` instead.
  */
 
-const PROTECTED_PREFIXES = ["/admin", "/seller", "/orders", "/onboarding", "/dashboard"];
+const PROTECTED_PREFIXES = ["/admin", "/seller", "/orders", "/onboarding"];
 
 export async function middleware(req: NextRequest) {
   let res = NextResponse.next({ request: req });
