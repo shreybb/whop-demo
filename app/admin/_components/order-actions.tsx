@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { advanceOrder, type ActionResult } from "@/app/dashboard/actions";
-import { payoutForOrder } from "@/app/dashboard/platform-actions";
+import { advanceOrder, type ActionResult } from "@/app/admin/actions";
+import { payoutForOrder } from "@/app/admin/platform-actions";
 import type { OrderState } from "@/lib/orders";
 
 // The next forward step a seller/admin can trigger by hand, per current state.

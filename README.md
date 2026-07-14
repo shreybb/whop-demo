@@ -130,7 +130,13 @@ Handler flow, in order:
   `purchase_url` carries `{ order_id, listing_id, seller_id }`.
 - **Payouts:** `accountLinks.create({ use_case: "payouts_portal" })` for the hosted
   portal, and `withdrawals.create` for a direct manual payout (wired to the "Pay out
-  seller" action on completed orders).
+  seller" action on completed orders). Each payout is written to a **`payouts` ledger**
+  (one row per order, `unique(order_id)`) recording the Whop `withdrawal_id`, amount, and
+  status — so money leaving the platform is auditable and reconcilable.
+  - **Idempotent by construction:** the ledger row is *claimed* (inserted `pending`)
+    **before** the withdrawal is issued. A retry or double-click collides on the unique
+    `order_id` instead of sending a second withdrawal; on success the row flips to `sent`
+    with the withdrawal id, on failure to `failed` (retriable, and visible for reconciliation).
 
 All are driven from the dashboard (Sellers / Listings action buttons). They are wired
 correctly against the real SDK types but require a **platform API key with
@@ -207,8 +213,24 @@ scripts/                       # seed.ts, test-bad-signature.sh
 tests/state-machine.test.ts    # unit tests (npm test)
 ```
 
+## Data model / reconciliation
+
+The schema ([`supabase/schema.sql`](supabase/schema.sql)) models every entity the
+marketplace reasons about:
+
+- `sellers`, `listings`, `orders` — the core marketplace, with the order carrying a
+  `currency` snapshot and `refunded_amount_cents` / `whop_refund_id` (written when a
+  `refund.*` event lands, so a `refunded` order records how much and which Whop refund).
+- `payouts` — the payout ledger described above (money out).
+- `webhook_events` — the audit log, with a nullable `order_id` linking each processed
+  event back to the order it touched, so an order can be reconciled against its full
+  event history from the dashboard.
+
 ## Notes / trade-offs (4h budget)
 
+- **No dedicated `buyers` table** — buyers have no Whop account, so a buyer is captured as
+  `orders.buyer_email`. This denormalization is intentional for the demo; a real build
+  would add a `buyers` table once buyers get identity/accounts.
 - **No auth / no RLS** on the demo dashboard, by design — all DB access is server-side
   via the service role key.
 - `npm audit` reports advisories from transitive deps of the Whop SDKs; not addressed

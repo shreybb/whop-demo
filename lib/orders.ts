@@ -121,7 +121,7 @@ export async function transitionOrder(
   return { applied: true, from, to, reason: "applied" };
 }
 
-/** Persist payment facts alongside the state change (immutable patch). */
+/** Persist payment/refund facts alongside the state change (immutable patch). */
 function buildPatch(event: WhopWebhookRequestBody): Record<string, unknown> {
   if (
     event.action === "payment.succeeded" ||
@@ -132,7 +132,38 @@ function buildPatch(event: WhopWebhookRequestBody): Record<string, unknown> {
       amount_cents: toCents(event.data.final_amount),
     };
   }
+  if (event.action === "refund.created" || event.action === "refund.updated") {
+    const { refundId, refundedAmountCents } = extractRefundInfo(event);
+    return {
+      ...(refundId ? { whop_refund_id: refundId } : {}),
+      ...(refundedAmountCents != null
+        ? { refunded_amount_cents: refundedAmountCents }
+        : {}),
+    };
+  }
   return {};
+}
+
+/**
+ * Pull the refund id + amount from a refund event. Refund payloads carry their
+ * own `id` and `amount`, and nest the original `payment` (see whop-sdk-api-surface);
+ * we fall back to the payment's `final_amount` when the refund omits an explicit amount.
+ */
+function extractRefundInfo(event: WhopWebhookRequestBody): {
+  refundId: string | null;
+  refundedAmountCents: number | null;
+} {
+  const data = event.data as Record<string, any>;
+  const refundId = typeof data?.id === "string" ? data.id : null;
+  const payment =
+    data && typeof data.payment === "object" && data.payment ? data.payment : null;
+  const rawAmount =
+    typeof data?.amount === "number"
+      ? data.amount
+      : typeof payment?.final_amount === "number"
+        ? payment.final_amount
+        : null;
+  return { refundId, refundedAmountCents: toCents(rawAmount) };
 }
 
 /**

@@ -20,3 +20,10 @@ export function PayoutBadge({ status }: { status: string }) {
     status === "ready" ? "green" : status === "pending_kyc" ? "amber" : "gray";
   return <Badge tone={tone}>{status.replace(/_/g, " ")}</Badge>;
 }
+
+/** Status of an actual payout-ledger row (pending | sent | failed). */
+export function PayoutStatusBadge({ status }: { status: string }) {
+  const tone: Tone =
+    status === "sent" ? "green" : status === "failed" ? "red" : "amber";
+  return <Badge tone={tone}>{status}</Badge>;
+}

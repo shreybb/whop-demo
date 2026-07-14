@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createListing, type Result } from "@/app/dashboard/platform-actions";
+import { createListing, type Result } from "@/app/admin/platform-actions";
 
 interface SellerOption {
   id: string;

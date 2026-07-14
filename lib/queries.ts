@@ -6,11 +6,20 @@ import type { OrderState } from "@/lib/orders";
  * Kept as plain typed shapes so the page components stay presentational.
  */
 
+export interface PayoutInfo {
+  whop_withdrawal_id: string | null;
+  status: string;
+  amount_cents: number;
+  currency: string;
+}
+
 export interface OrderRow {
   id: string;
   buyer_email: string | null;
   state: OrderState;
   amount_cents: number | null;
+  currency: string;
+  refunded_amount_cents: number | null;
   whop_payment_id: string | null;
   created_at: string;
   updated_at: string;
@@ -19,6 +28,7 @@ export interface OrderRow {
     currency: string;
     seller: { name: string; payout_status: string } | null;
   } | null;
+  payout: PayoutInfo | null;
 }
 
 export interface WebhookEventRow {
@@ -28,6 +38,7 @@ export interface WebhookEventRow {
   signature_valid: boolean;
   processed: boolean;
   error: string | null;
+  order_id: string | null;
   received_at: string;
 }
 
@@ -35,8 +46,10 @@ export async function getOrders(limit = 100): Promise<OrderRow[]> {
   const { data, error } = await getSupabase()
     .from("orders")
     .select(
-      "id, buyer_email, state, amount_cents, whop_payment_id, created_at, updated_at, " +
-        "listing:listings(title, currency, seller:sellers(name, payout_status))",
+      "id, buyer_email, state, amount_cents, currency, refunded_amount_cents, " +
+        "whop_payment_id, created_at, updated_at, " +
+        "listing:listings(title, currency, seller:sellers(name, payout_status)), " +
+        "payout:payouts(whop_withdrawal_id, status, amount_cents, currency)",
     )
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -52,13 +65,14 @@ export async function getOrders(limit = 100): Promise<OrderRow[]> {
           seller: unwrapOne(unwrapOne(row.listing)?.seller) ?? null,
         }
       : null,
+    payout: unwrapOne(row.payout) ?? null,
   })) as OrderRow[];
 }
 
 export async function getWebhookEvents(limit = 100): Promise<WebhookEventRow[]> {
   const { data, error } = await getSupabase()
     .from("webhook_events")
-    .select("id, type, payload, signature_valid, processed, error, received_at")
+    .select("id, type, payload, signature_valid, processed, error, order_id, received_at")
     .order("received_at", { ascending: false })
     .limit(limit);
 

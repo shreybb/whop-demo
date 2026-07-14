@@ -34,9 +34,13 @@ export async function replayEvent(id: string): Promise<ActionResult> {
     const result = await processEvent(data.payload as WhopWebhookRequestBody);
     await supabase
       .from("webhook_events")
-      .update({ processed: true, error: null })
+      .update({
+        processed: true,
+        error: null,
+        order_id: result.handled ? result.orderId : null,
+      })
       .eq("id", id);
-    revalidatePath("/dashboard");
+    revalidatePath("/admin");
     return { ok: true, message: summarize(result) };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
@@ -44,7 +48,7 @@ export async function replayEvent(id: string): Promise<ActionResult> {
       .from("webhook_events")
       .update({ processed: false, error: message })
       .eq("id", id);
-    revalidatePath("/dashboard");
+    revalidatePath("/admin");
     return { ok: false, message };
   }
 }
@@ -55,7 +59,7 @@ export async function advanceOrder(
   to: OrderState,
 ): Promise<ActionResult> {
   const result = await transitionOrder(orderId, to);
-  revalidatePath("/dashboard");
+  revalidatePath("/admin");
   if (result.applied) {
     return { ok: true, message: `Order → ${result.to}` };
   }

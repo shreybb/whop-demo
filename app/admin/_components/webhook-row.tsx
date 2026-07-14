@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTime, shortId } from "@/lib/format";
-import { replayEvent, type ActionResult } from "@/app/dashboard/actions";
+import { replayEvent, type ActionResult } from "@/app/admin/actions";
 import type { WebhookEventRow } from "@/lib/queries";
 
 export function WebhookRow({ event }: { event: WebhookEventRow }) {
@@ -49,6 +49,13 @@ export function WebhookRow({ event }: { event: WebhookEventRow }) {
             <Badge tone="amber">unprocessed</Badge>
           )}
         </td>
+        <td className="px-3 py-2 align-top font-mono text-xs text-muted-foreground">
+          {event.order_id ? (
+            <span title={event.order_id}>{shortId(event.order_id)}</span>
+          ) : (
+            "—"
+          )}
+        </td>
         <td className="px-3 py-2 align-top text-xs text-muted-foreground">
           {formatDateTime(event.received_at)}
         </td>
@@ -66,7 +73,7 @@ export function WebhookRow({ event }: { event: WebhookEventRow }) {
       </tr>
       {(open || result || event.error) && (
         <tr className="border-t border-border bg-muted/30">
-          <td colSpan={6} className="px-3 py-2">
+          <td colSpan={7} className="px-3 py-2">
             {event.error && (
               <p className="mb-2 text-xs text-red-700">
                 <span className="font-semibold">Last error:</span> {event.error}

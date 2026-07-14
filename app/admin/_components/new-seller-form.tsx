@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createSeller, type Result } from "@/app/dashboard/platform-actions";
+import { createSeller, type Result } from "@/app/admin/platform-actions";
 
 export function NewSellerForm() {
   const [name, setName] = useState("");

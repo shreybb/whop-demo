@@ -6,7 +6,7 @@ import {
   getSellerLink,
   syncPayoutStatus,
   type Result,
-} from "@/app/dashboard/platform-actions";
+} from "@/app/admin/platform-actions";
 
 export function SellerActions({
   sellerId,

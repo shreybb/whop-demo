@@ -41,8 +41,9 @@ export async function createAccountLink(input: {
     const link = await getWhopRest().accountLinks.create({
       company_id: input.companyId,
       use_case: input.useCase,
-      return_url: `${base}/dashboard`,
-      refresh_url: `${base}/dashboard`,
+      // Sellers land back in their portal after hosted KYC / payout setup.
+      return_url: `${base}/seller`,
+      refresh_url: `${base}/seller`,
     });
     return { url: link.url, expiresAt: link.expires_at };
   } catch (err) {
@@ -122,7 +123,8 @@ export async function createCheckoutForOrder(input: {
         listing_id: input.listingId,
         seller_id: input.sellerId,
       },
-      redirect_url: `${env.appUrl()}/dashboard`,
+      // Buyers come back to their orders after paying on Whop.
+      redirect_url: `${env.appUrl()}/orders`,
     });
     return { purchaseUrl: config.purchase_url };
   } catch (err) {

@@ -77,7 +77,13 @@ export async function POST(req: Request): Promise<Response> {
     const result = await processEvent(event);
     await supabase
       .from("webhook_events")
-      .update({ processed: true, error: null })
+      .update({
+        processed: true,
+        error: null,
+        // Link the event to the order it touched, so the dashboard can reconcile
+        // an order against its full event history.
+        order_id: result.handled ? result.orderId : null,
+      })
       .eq("id", eventId);
     return json({ status: "processed", id: eventId, ...result }, 200);
   } catch (err) {

@@ -33,5 +33,8 @@ export const env = {
   whopAppId: () => optional("WHOP_APP_ID", optional("NEXT_PUBLIC_WHOP_APP_ID", "app_placeholder")),
   supabaseUrl: () => required("SUPABASE_URL"),
   supabaseServiceRoleKey: () => required("SUPABASE_SERVICE_ROLE_KEY"),
+  // Anon (publishable) key: safe by design *when RLS is on*, but we only ever
+  // use it server-side (SSR auth client), so it stays un-prefixed anyway.
+  supabaseAnonKey: () => required("SUPABASE_ANON_KEY"),
   appUrl: () => optional("NEXT_PUBLIC_APP_URL", "http://localhost:3000"),
 };
