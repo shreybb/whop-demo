@@ -155,6 +155,28 @@ export function mapPayoutStatus(
   }
 }
 
+/**
+ * The platform's ledger balances. Buyer payments settle here first (sellers
+ * are paid from this pool), and the sandbox holds proceeds in
+ * `pending_balance` before releasing them — payouts fail with a confusing
+ * error unless the UI surfaces that settling state.
+ */
+export async function getPlatformBalance(): Promise<{
+  availableCents: number;
+  pendingCents: number;
+}> {
+  try {
+    const ledger = await getWhopRest().ledgerAccounts.retrieve(env.whopCompanyId());
+    const usd = (ledger.balances ?? []).find((b) => b.currency === "usd");
+    return {
+      availableCents: Math.round((usd?.balance ?? 0) * 100),
+      pendingCents: Math.round((usd?.pending_balance ?? 0) * 100),
+    };
+  } catch (err) {
+    throw wrap("getPlatformBalance", err);
+  }
+}
+
 /** Create a Whop product + one-time plan for a listing. Returns their ids. */
 export async function createListingProductAndPlan(input: {
   title: string;

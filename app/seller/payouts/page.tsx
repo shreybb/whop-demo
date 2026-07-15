@@ -2,6 +2,7 @@ import { getMySeller, getMyPayouts } from "@/lib/seller";
 import { formatMoney, formatDateTime, shortId } from "@/lib/format";
 import { PayoutStatusBadge } from "@/app/_components/state-badge";
 import { PayoutPortalButton } from "../_components/payout-portal-button";
+import { FundsNotice } from "../_components/funds-notice";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Payouts — CreatorJobs seller" };
@@ -20,6 +21,8 @@ export default async function SellerPayoutsPage() {
         <h1 className="text-xl font-semibold text-foreground">Payouts</h1>
         {seller.whop_company_id && <PayoutPortalButton />}
       </div>
+
+      <FundsNotice />
 
       {payouts.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border bg-white p-6 text-center text-sm text-muted-foreground">

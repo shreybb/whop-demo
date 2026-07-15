@@ -2,6 +2,7 @@ import { getMySeller, getMySellerOrders } from "@/lib/seller";
 import { formatMoney, formatDateTime, shortId } from "@/lib/format";
 import { StateBadge } from "@/app/_components/state-badge";
 import { OrderWorkflow } from "../_components/order-workflow";
+import { FundsNotice } from "../_components/funds-notice";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Orders — CreatorJobs seller" };
@@ -18,6 +19,8 @@ export default async function SellerOrdersPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold text-foreground">Orders</h1>
+
+      <FundsNotice />
 
       {orders.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border bg-white p-6 text-center text-sm text-muted-foreground">
