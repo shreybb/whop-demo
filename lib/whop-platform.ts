@@ -29,14 +29,20 @@ import { env } from "@/lib/env";
 export async function createConnectedAccount(input: {
   name: string;
   email: string;
+  /** Short unique tag (e.g. seller row id prefix) — Whop rejects duplicate
+   * account titles, and display names aren't unique on our side. */
+  uniqueSuffix?: string;
 }): Promise<{ companyId: string; via: "accounts" | "companies" }> {
   const rest = getWhopRest();
   const beta = BETA;
+  const title = input.uniqueSuffix
+    ? `${input.name} · ${input.uniqueSuffix}`
+    : input.name;
   try {
     const account = await rest.accounts.create(
       {
         email: input.email,
-        title: input.name,
+        title,
         metadata: { source: "creatorjobs_onboarding" },
       } as Parameters<typeof rest.accounts.create>[0],
       beta,
@@ -57,8 +63,11 @@ export async function createConnectedAccount(input: {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const list = await (rest.accounts.list as any)(null, beta);
-    const phantom = ((list.accounts ?? []) as Array<{ id: string; email?: string; title?: string }>).find(
-      (a) => a.email === input.email && a.title === input.name,
+    // Beta responses page under `data`; the Stable shape used `accounts`.
+    // Reading only one of them is how a real phantom went unrecovered.
+    const rows = (list.data ?? list.accounts ?? []) as Array<{ id: string; email?: string; title?: string }>;
+    const phantom = rows.find(
+      (a) => a.email === input.email && (a.title === title || a.title === input.name),
     );
     if (phantom) {
       console.warn(
@@ -73,7 +82,7 @@ export async function createConnectedAccount(input: {
 
   try {
     const company = await rest.companies.create({
-      title: input.name,
+      title,
       email: input.email,
       parent_company_id: env.whopCompanyId(), // enroll under the CreatorJobs platform
     });

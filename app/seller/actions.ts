@@ -80,6 +80,7 @@ export async function setupConnectedAccount(): Promise<Result> {
     const { companyId } = await createConnectedAccount({
       name: seller.name,
       email: seller.email,
+      uniqueSuffix: seller.id.slice(0, 6),
     });
     await getSupabase()
       .from("sellers")
