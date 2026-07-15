@@ -1,5 +1,5 @@
 import Whop from "@whop/sdk";
-import { getWhopRest } from "@/lib/whop-sdk";
+import { BETA, getWhopRest } from "@/lib/whop-sdk";
 import { env } from "@/lib/env";
 
 /**
@@ -31,7 +31,7 @@ export async function createConnectedAccount(input: {
   email: string;
 }): Promise<{ companyId: string; via: "accounts" | "companies" }> {
   const rest = getWhopRest();
-  const beta = { headers: { "Api-Version-Date": "2026-07-08-1" } };
+  const beta = BETA;
   try {
     const account = await rest.accounts.create(
       {
@@ -122,6 +122,30 @@ export async function getConnectedAccountStatus(
   companyId: string,
   payoutAccountId?: string | null,
 ): Promise<{ payoutStatus: "not_started" | "pending_kyc" | "ready" }> {
+  // Experimental-first: beta List Verifications reports KYC status per
+  // account (approved/pending/action_required). Not in the pinned SDK, so raw
+  // fetch. Falls through to the Stable payoutAccounts read on any miss.
+  try {
+    const base = process.env.WHOP_BASE_URL ?? "https://api.whop.com/api/v1";
+    const res = await fetch(`${base}/verifications?account_id=${companyId}`, {
+      headers: {
+        Authorization: `Bearer ${env.whopApiKey()}`,
+        ...BETA.headers,
+      },
+    });
+    if (res.ok) {
+      const body = (await res.json()) as { data?: Array<{ status?: string }> };
+      const status = body.data?.[0]?.status;
+      if (status === "approved") return { payoutStatus: "ready" };
+      if (status === "pending" || status === "action_required") {
+        return { payoutStatus: "pending_kyc" };
+      }
+      // not_started / rejected / empty -> fall through to the Stable read.
+    }
+  } catch {
+    // Network/shape issues: fall through to the Stable read.
+  }
+
   try {
     // Retrieve is keyed by the poact_ id (captured from webhooks); retrieving
     // by company id 404s even when the payout account exists — confirmed live.
@@ -187,7 +211,7 @@ export async function createListingProductAndPlan(input: {
 }): Promise<{ productId: string; planId: string; purchaseUrl: string | null }> {
   const rest = getWhopRest();
   try {
-    const product = await rest.products.create({
+    const productBody = {
       company_id: env.whopCompanyId(),
       // Seller attribution on the hosted checkout, which otherwise only shows
       // the platform's branding (products live under the platform company).
@@ -195,7 +219,11 @@ export async function createListingProductAndPlan(input: {
       // Hosted checkout's button says "Join" by default (membership-speak);
       // 'purchase' is the closest supported CTA for one-time work.
       custom_cta: "purchase",
-    });
+    } as const;
+    // Experimental-first; retry without the version header on failure.
+    const product = await rest.products
+      .create(productBody, BETA)
+      .catch(() => rest.products.create(productBody));
     const plan = await rest.plans.create({
       company_id: env.whopCompanyId(),
       product_id: product.id,
@@ -207,7 +235,7 @@ export async function createListingProductAndPlan(input: {
       currency: input.currency as never,
       initial_price: input.priceCents / 100, // Whop uses decimal currency units
       description: input.description ?? undefined,
-    });
+    }, BETA);
     return {
       productId: product.id,
       planId: plan.id,
@@ -230,7 +258,7 @@ export async function createCheckoutForOrder(input: {
   sellerId: string;
 }): Promise<{ purchaseUrl: string }> {
   try {
-    const config = await getWhopRest().checkoutConfigurations.create({
+    const body = {
       plan_id: input.planId,
       metadata: {
         order_id: input.orderId,
@@ -239,7 +267,11 @@ export async function createCheckoutForOrder(input: {
       },
       // Buyers come back to their orders after paying on Whop.
       redirect_url: `${env.appUrl()}/orders`,
-    });
+    } as const;
+    // Experimental-first (proven live via the setup-mode probe); Stable retry.
+    const config = await getWhopRest()
+      .checkoutConfigurations.create(body, BETA)
+      .catch(() => getWhopRest().checkoutConfigurations.create(body));
     return { purchaseUrl: config.purchase_url };
   } catch (err) {
     throw wrap("createCheckoutForOrder", err);
@@ -297,7 +329,11 @@ export async function payoutConnectedAccount(input: {
 
   let payoutMethodId: string;
   try {
-    const methods = await rest.payoutMethods.list({ company_id: input.companyId });
+    // Experimental shape uses account_id; fall back to the Stable company_id.
+    const methods = await (rest.payoutMethods.list as (q: unknown, o?: unknown) => ReturnType<typeof rest.payoutMethods.list>)(
+      { account_id: input.companyId },
+      BETA,
+    ).catch(() => rest.payoutMethods.list({ company_id: input.companyId }));
     const items = methods.data ?? [];
     const method = items.find((m) => m.is_default) ?? items[0];
     if (!method) {

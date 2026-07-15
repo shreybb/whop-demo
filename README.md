@@ -176,7 +176,9 @@ OpenAPI source markers** (`api-v1-stable.json` vs the `/api-reference/beta/`
 | `plans.create` (listing pricing) | **Experimental** — the Plans resource has no Stable equivalent at all |
 | `transfers.create` (seller payout) | **Experimental** — primary payout path, see blocker below |
 | `accounts.create` (seller onboarding) | **Experimental** — primary path, Stable `companies.create` fallback. Sandbox blocker: beta account creation dies on a capped Privy wallet tenant (`max_accounts_reached`) — and NON-ATOMICALLY: the account persists before the 400, so the fallback first recovers the phantom account by email+title before ever double-creating |
-| `accountLinks.create`, `payoutAccounts.retrieve`, `products.create`, `checkoutConfigurations.create`, `payoutMethods.list`, `withdrawals.create` (fallback only), `webhooks.unwrap` | Stable — account links, payout methods, withdrawals, and webhook management have **no Experimental surface at all**; `payoutAccounts` stays Stable deliberately (the beta account `status` means active/suspended, not KYC readiness) |
+| `products.create`, `checkoutConfigurations.create` (checkout) | **Experimental** (`Api-Version-Date` pinned), Stable retry on error |
+| `payoutMethods.list`, KYC status (`GET /verifications?account_id=`) | **Experimental** first, Stable `payoutAccounts.retrieve(poact_)` / `company_id`-shape fallbacks |
+| `accountLinks.create`, `withdrawals.create` (fallback only), `webhooks.unwrap` | Stable — **no Experimental surface exists**: account links and webhook config/verification have no beta pages, and beta `Create Payout` is stablecoin-only ("Accounts that pay out from a fiat balance use POST /withdrawals") |
 
 **Blocker: Experimental ledger transfers don't work in the sandbox.** Whop's
 current platform quickstart pays sub-merchants with `transfers.create`

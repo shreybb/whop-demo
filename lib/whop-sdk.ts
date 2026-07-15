@@ -28,3 +28,10 @@ export function getWhopRest(): Whop {
   });
   return client;
 }
+
+/**
+ * Per-request opt-in to the Experimental API model. The SDK sends no version
+ * header by default (= original 2025-01-01 Stable behavior); passing this pins
+ * the newest supported version, per docs.whop.com/developer/api/versioning.
+ */
+export const BETA = { headers: { "Api-Version-Date": "2026-07-08-1" } } as const;
