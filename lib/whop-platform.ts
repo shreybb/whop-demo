@@ -1,3 +1,4 @@
+import Whop from "@whop/sdk";
 import { getWhopRest } from "@/lib/whop-sdk";
 import { env } from "@/lib/env";
 
@@ -51,21 +52,46 @@ export async function createAccountLink(input: {
   }
 }
 
-/** Read a connected account's status so we can sync `payout_status`. */
+/**
+ * Read a connected account's payout readiness so we can sync `payout_status`.
+ *
+ * Payout readiness is NOT a `Company` field — `companies.retrieve` has no
+ * `payouts_enabled`/`charges_enabled` (that was a guess this project made
+ * before verifying against the real schema; those fields don't exist
+ * anywhere in `@whop/sdk`'s types). The real source of truth is the
+ * `payoutAccounts` resource, keyed by the same connected-account id, whose
+ * `status` is the actual KYC/withdrawal-readiness signal. It 404s until the
+ * seller starts hosted onboarding — that's `not_started`, not an error.
+ */
 export async function getConnectedAccountStatus(
   companyId: string,
 ): Promise<{ payoutStatus: "not_started" | "pending_kyc" | "ready" }> {
   try {
-    const company = await getWhopRest().companies.retrieve(companyId);
-    // Map Whop's verification/payout readiness onto our coarse status.
-    // Field names vary by account; default conservatively to pending_kyc.
-    const anyCompany = company as unknown as Record<string, unknown>;
-    const ready =
-      anyCompany.payouts_enabled === true ||
-      anyCompany.charges_enabled === true;
-    return { payoutStatus: ready ? "ready" : "pending_kyc" };
+    const account = await getWhopRest().payoutAccounts.retrieve(companyId);
+    return { payoutStatus: mapPayoutStatus(account.status) };
   } catch (err) {
+    if (err instanceof Whop.NotFoundError) {
+      return { payoutStatus: "not_started" };
+    }
     throw wrap("getConnectedAccountStatus", err);
+  }
+}
+
+function mapPayoutStatus(
+  status: Whop.PayoutAccountCalculatedStatuses | null,
+): "not_started" | "pending_kyc" | "ready" {
+  switch (status) {
+    case "connected":
+      return "ready";
+    case "pending_verification":
+    case "action_required":
+    case "verification_failed":
+    case "disabled":
+      return "pending_kyc";
+    case "not_started":
+    case null:
+    default:
+      return "not_started";
   }
 }
 
