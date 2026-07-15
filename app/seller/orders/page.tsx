@@ -20,7 +20,7 @@ export default async function SellerOrdersPage() {
     <div className="flex flex-col gap-6">
       <h1 className="text-xl font-semibold text-foreground">Orders</h1>
 
-      <FundsNotice />
+      <FundsNotice sellerId={seller.id} />
 
       {orders.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border bg-white p-6 text-center text-sm text-muted-foreground">

@@ -22,7 +22,7 @@ export default async function SellerPayoutsPage() {
         {seller.whop_company_id && <PayoutPortalButton />}
       </div>
 
-      <FundsNotice />
+      <FundsNotice sellerId={seller.id} />
 
       {payouts.length === 0 ? (
         <p className="rounded-lg border border-dashed border-border bg-white p-6 text-center text-sm text-muted-foreground">

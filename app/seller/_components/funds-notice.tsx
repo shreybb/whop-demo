@@ -1,30 +1,39 @@
+import { getSupabase } from "@/lib/supabase";
 import { getPlatformBalance } from "@/lib/whop-platform";
 import { formatMoney } from "@/lib/format";
 
 /**
- * Surfaces the platform's settling funds so a failing withdraw isn't a
- * mystery: buyer payments land in the platform's ledger as PENDING first,
- * and payouts can only draw on the available balance. Renders nothing once
- * funds have settled (or if the balance can't be read — never block the page).
+ * Seller-facing settlement notice. Shows ONLY the seller's own earned-but-
+ * unpaid amount — never the platform-wide balance (that includes the
+ * marketplace's take and other sellers' money, and is nobody else's
+ * business). The platform balance is read server-side purely to decide
+ * whether their withdrawal would clear right now.
  */
-export async function FundsNotice() {
-  let available = 0;
-  let pending = 0;
+export async function FundsNotice({ sellerId }: { sellerId: string }) {
   try {
-    const balance = await getPlatformBalance();
-    available = balance.availableCents;
-    pending = balance.pendingCents;
-  } catch {
-    return null;
-  }
-  if (pending <= 0) return null;
+    const supabase = getSupabase();
+    const { data: orders } = await supabase
+      .from("orders")
+      .select("amount_cents, listing:listings!inner(seller_id)")
+      .eq("state", "completed")
+      .eq("listing.seller_id", sellerId);
+    const owedCents = (orders ?? []).reduce(
+      (sum, o) => sum + (o.amount_cents ?? 0),
+      0,
+    );
+    if (owedCents <= 0) return null;
 
-  return (
-    <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-      {formatMoney(pending)} from recent sales is still settling with Whop
-      (platform available balance: {formatMoney(available)}). Withdrawals draw
-      on settled funds only — if a withdrawal fails right now, retry after
-      settlement completes.
-    </p>
-  );
+    const { availableCents } = await getPlatformBalance();
+    if (availableCents >= owedCents) return null;
+
+    return (
+      <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+        {formatMoney(owedCents)} from your delivered orders is still settling.
+        Payments can take up to 3 days to settle — withdrawals unlock once
+        they do.
+      </p>
+    );
+  } catch {
+    return null; // never block the page on a balance read
+  }
 }
