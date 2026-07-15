@@ -3,7 +3,6 @@ import { requireUser } from "@/lib/auth";
 import { getMyOrders } from "@/lib/marketplace";
 import { formatMoney, formatDateTime, shortId } from "@/lib/format";
 import { StateBadge } from "@/app/_components/state-badge";
-import { SiteHeader } from "@/app/_components/site-header";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "My orders — CreatorJobs" };
@@ -18,7 +17,6 @@ export default async function MyOrdersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <SiteHeader />
       <h1 className="text-xl font-semibold text-foreground">My orders</h1>
 
       {orders.length === 0 ? (

@@ -4,7 +4,6 @@ import { requireUser } from "@/lib/auth";
 import { getMyOrder } from "@/lib/marketplace";
 import { formatMoney, formatDateTime } from "@/lib/format";
 import { StateBadge } from "@/app/_components/state-badge";
-import { SiteHeader } from "@/app/_components/site-header";
 import { OrderTimeline } from "./order-timeline";
 
 export const dynamic = "force-dynamic";
@@ -22,8 +21,6 @@ export default async function OrderDetailPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <SiteHeader />
-
       <nav className="text-xs text-muted-foreground">
         <Link href="/orders" className="hover:text-foreground">
           ← My orders

@@ -11,18 +11,72 @@ import { env } from "@/lib/env";
  * They are wired correctly but can only be exercised against live credentials.
  */
 
-/** Create a Whop connected account (sub-merchant) for a seller. */
+/**
+ * Create a Whop connected account (sub-merchant) for a seller.
+ *
+ * Experimental-first: the beta Accounts API (`accounts.create` +
+ * `Api-Version-Date`) creates a connected account implicitly under the API
+ * key's platform account — no `parent_company_id` needed (verified live: the
+ * response carries `parent_account_id` automatically). `title` postdates the
+ * pinned SDK's types, hence the cast; the API accepts it.
+ *
+ * DOCUMENTED SANDBOX BLOCKER: beta account creation provisions a crypto
+ * wallet via Privy, and the sandbox's Privy tenant is capped — requests
+ * validate but die with "Privy API error (400): max_accounts_reached". On
+ * any create failure, fall back to the Stable `companies.create` (which
+ * skips wallet provisioning) so onboarding never breaks.
+ */
 export async function createConnectedAccount(input: {
   name: string;
   email: string;
-}): Promise<{ companyId: string }> {
+}): Promise<{ companyId: string; via: "accounts" | "companies" }> {
+  const rest = getWhopRest();
+  const beta = { headers: { "Api-Version-Date": "2026-07-08-1" } };
   try {
-    const company = await getWhopRest().companies.create({
+    const account = await rest.accounts.create(
+      {
+        email: input.email,
+        title: input.name,
+        metadata: { source: "creatorjobs_onboarding" },
+      } as Parameters<typeof rest.accounts.create>[0],
+      beta,
+    );
+    return { companyId: account.id, via: "accounts" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn(
+      "[whop-platform] Experimental accounts.create errored:",
+      message.slice(0, 200),
+    );
+  }
+
+  // CONFIRMED LIVE: the beta create is NOT atomic. On the Privy cap it
+  // persists the account, THEN returns 400 — so blindly retrying (or falling
+  // back to companies.create) double-creates / collides on the name. Recover
+  // the phantom account by email+title before creating anything else.
+  try {
+    const list = await rest.accounts.list(beta);
+    const phantom = (list.data ?? []).find(
+      (a) => a.email === input.email && a.title === input.name,
+    );
+    if (phantom) {
+      console.warn(
+        "[whop-platform] recovered account persisted by the failed beta create:",
+        phantom.id,
+      );
+      return { companyId: phantom.id, via: "accounts" };
+    }
+  } catch {
+    // Listing is best-effort; fall through to the Stable create.
+  }
+
+  try {
+    const company = await rest.companies.create({
       title: input.name,
       email: input.email,
       parent_company_id: env.whopCompanyId(), // enroll under the CreatorJobs platform
     });
-    return { companyId: company.id };
+    return { companyId: company.id, via: "companies" };
   } catch (err) {
     throw wrap("createConnectedAccount", err);
   }

@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import { getPublishedListing } from "@/lib/marketplace";
 import { getProfile } from "@/lib/auth";
 import { formatMoney } from "@/lib/format";
-import { SiteHeader } from "@/app/_components/site-header";
 import { BuyButton } from "./buy-button";
 
 export const dynamic = "force-dynamic";
@@ -21,8 +20,6 @@ export default async function ListingPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <SiteHeader />
-
       <nav className="text-xs text-muted-foreground">
         <Link href="/" className="hover:text-foreground">
           ← All listings

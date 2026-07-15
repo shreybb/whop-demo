@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { getPublishedListings } from "@/lib/marketplace";
 import { formatMoney } from "@/lib/format";
-import { SiteHeader } from "@/app/_components/site-header";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +10,6 @@ export default async function HomePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <SiteHeader />
 
       <section>
         <h1 className="text-xl font-semibold text-foreground">
