@@ -52,7 +52,9 @@ export default async function SellerPayoutsPage() {
                   <td className="px-3 py-2">
                     <PayoutStatusBadge status={p.status} />
                     {p.error && (
-                      <span className="ml-2 text-xs text-red-700">{p.error}</span>
+                      <span className="ml-2 text-xs text-red-700">
+                        {p.error.replace(/^Whop \S+(?: \([^)]*\))? failed:\s*/, "")}
+                      </span>
                     )}
                   </td>
                   <td className="px-3 py-2 font-mono text-xs text-muted-foreground">
