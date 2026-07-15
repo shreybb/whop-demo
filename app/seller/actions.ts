@@ -181,6 +181,7 @@ export async function publishMyListing(listingId: string): Promise<Result> {
       description: listing.description,
       priceCents: listing.price_cents,
       currency: listing.currency,
+      sellerName: seller.name,
     });
     await getSupabase()
       .from("listings")

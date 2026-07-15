@@ -183,12 +183,18 @@ export async function createListingProductAndPlan(input: {
   description?: string | null;
   priceCents: number;
   currency: string;
+  sellerName?: string;
 }): Promise<{ productId: string; planId: string; purchaseUrl: string | null }> {
   const rest = getWhopRest();
   try {
     const product = await rest.products.create({
       company_id: env.whopCompanyId(),
-      title: input.title,
+      // Seller attribution on the hosted checkout, which otherwise only shows
+      // the platform's branding (products live under the platform company).
+      title: input.sellerName ? `${input.title} — by ${input.sellerName}` : input.title,
+      // Hosted checkout's button says "Join" by default (membership-speak);
+      // 'purchase' is the closest supported CTA for one-time work.
+      custom_cta: "purchase",
     });
     const plan = await rest.plans.create({
       company_id: env.whopCompanyId(),
