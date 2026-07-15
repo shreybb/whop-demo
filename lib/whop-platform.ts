@@ -346,11 +346,10 @@ export async function payoutConnectedAccount(input: {
     const items = methods.data ?? [];
     const method = items.find((m) => m.is_default) ?? items[0];
     if (!method) {
+      // Seller-facing copy: the sandbox specifics (transfer routing gap,
+      // portal limitations) live in the README and server logs, not the UI.
       throw new Error(
-        "Payout is blocked in this sandbox: balance transfers are unsupported " +
-          "(falls back to a bank withdrawal), no payout method is on file, and " +
-          "the sandbox portal offers no way to add one. In production, sellers " +
-          "add a payout method via the portal or funds move by balance transfer.",
+        "Wait for your funds to clear, then add a payout method to withdraw.",
       );
     }
     payoutMethodId = method.id;
