@@ -22,6 +22,9 @@ export async function SiteHeader() {
             <NavLink href="/seller/listings">Listings</NavLink>
             <NavLink href="/seller/orders">Orders</NavLink>
             <NavLink href="/seller/payouts">Payouts</NavLink>
+            {/* Sellers can buy from other sellers; their purchases live on
+                the buyer view (approve/reject actions included). */}
+            <NavLink href="/orders">Purchases</NavLink>
             <NavLink href="/" match="exact">Marketplace</NavLink>
           </nav>
         </div>
