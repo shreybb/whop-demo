@@ -37,5 +37,21 @@ export function sanitizeWhopError(message: string): string {
   let out = message;
   const prefix = /^Whop \S+(?: \([^)]*\))? failed:\s*/;
   while (prefix.test(out)) out = out.replace(prefix, "");
-  return out.replace(/^\d{3} \{.*\}$/s, "Something went wrong on Whop's side. Try again shortly.");
+
+  // Raw "400 {json}" API errors: keep plain English but surface Whop's own
+  // message plus the status + error code, so failures are reportable without
+  // dumping the full payload on the user.
+  const m = out.match(/^(\d{3})\s+(\{.*)$/s);
+  if (!m) return out;
+  try {
+    const err = (JSON.parse(m[2]) as { error?: { type?: string; message?: string } }).error ?? {};
+    const detail =
+      typeof err.message === "string" && err.message.trim()
+        ? err.message.trim()
+        : "Something went wrong on Whop's side. Try again shortly.";
+    const code = err.type ? `${m[1]} ${err.type}` : m[1];
+    return `${detail} (Whop error ${code})`;
+  } catch {
+    return `Something went wrong on Whop's side (HTTP ${m[1]}). Try again shortly.`;
+  }
 }
