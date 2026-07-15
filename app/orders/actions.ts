@@ -40,3 +40,29 @@ export async function approveCompletion(orderId: string): Promise<ApproveResult>
     ? { ok: true, message: "Approved — the seller can now be paid." }
     : { ok: false, message: `No change (${t.reason}).` };
 }
+
+/** Buyer rejection: awaiting_approval -> back to in_progress for rework. */
+export async function rejectDelivery(orderId: string): Promise<ApproveResult> {
+  const profile = await getProfile();
+  if (!profile) return { ok: false, message: "Sign in first." };
+
+  const { data: order, error } = await getSupabase()
+    .from("orders")
+    .select("id, buyer_id, state")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (error) return { ok: false, message: error.message };
+  if (!order || order.buyer_id !== profile.id) {
+    return { ok: false, message: "Not your order." };
+  }
+  if (order.state !== "awaiting_approval") {
+    return { ok: false, message: "Nothing to reject right now." };
+  }
+
+  const t = await transitionOrder(orderId, "in_progress");
+  revalidatePath(`/orders/${orderId}`);
+  revalidatePath("/orders");
+  return t.applied
+    ? { ok: true, message: "Sent back to the seller for rework." }
+    : { ok: false, message: `No change (${t.reason}).` };
+}

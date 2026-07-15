@@ -40,6 +40,9 @@ export function canTransition(from: OrderState, to: OrderState): boolean {
   if (from === to) return false;
   if (TERMINAL.has(from)) return false; // terminal is final
   if (TERMINAL.has(to)) return true; // any non-terminal -> failed/refunded
+  // The one sanctioned reverse edge: a buyer rejecting a delivery sends the
+  // order back for rework. Everything else stays forward-only.
+  if (from === "awaiting_approval" && to === "in_progress") return true;
   return RANK[to] > RANK[from]; // linear chain: forward-only
 }
 

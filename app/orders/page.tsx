@@ -4,6 +4,7 @@ import { getMyOrders } from "@/lib/marketplace";
 import { formatMoney, shortId } from "@/lib/format";
 import { LocalTime } from "@/app/_components/local-time";
 import { StateBadge } from "@/app/_components/state-badge";
+import { ApprovalActions } from "./[id]/approve-button";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "My orders — CreatorJobs" };
@@ -39,6 +40,7 @@ export default async function MyOrdersPage() {
                 <th className="px-3 py-2 font-medium">Amount</th>
                 <th className="px-3 py-2 font-medium">Status</th>
                 <th className="px-3 py-2 font-medium">Updated</th>
+                <th className="px-3 py-2 font-medium">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -66,6 +68,13 @@ export default async function MyOrdersPage() {
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
                     <LocalTime iso={o.updated_at} />
+                  </td>
+                  <td className="px-3 py-2">
+                    {o.state === "awaiting_approval" ? (
+                      <ApprovalActions orderId={o.id} />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </td>
                 </tr>
               ))}

@@ -84,3 +84,11 @@ test("eventAction normalizes action/type/event fields and tolerates junk", () =>
   assert.equal(eventAction(null), "unknown");
   assert.equal(eventAction({ action: 42 }), "unknown");
 });
+
+test("buyer rejection is the one sanctioned reverse edge", () => {
+  assert.equal(canTransition("awaiting_approval", "in_progress"), true);
+  // No other backward moves open up.
+  assert.equal(canTransition("completed", "in_progress"), false);
+  assert.equal(canTransition("in_progress", "paid"), false);
+  assert.equal(canTransition("paid_out", "awaiting_approval"), false);
+});

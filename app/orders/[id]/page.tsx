@@ -6,7 +6,7 @@ import { formatMoney } from "@/lib/format";
 import { LocalTime } from "@/app/_components/local-time";
 import { StateBadge } from "@/app/_components/state-badge";
 import { OrderTimeline } from "./order-timeline";
-import { ApproveButton } from "./approve-button";
+import { ApprovalActions } from "./approve-button";
 
 export const dynamic = "force-dynamic";
 
@@ -73,10 +73,10 @@ export default async function OrderDetailPage({
               The seller marked this delivered
             </h2>
             <p className="mt-1 text-sm text-purple-900">
-              Review the work below, then approve to release it for payout.
+              Review the work below — approve to release payment, or request changes.
             </p>
             <div className="mt-3">
-              <ApproveButton orderId={order.id} />
+              <ApprovalActions orderId={order.id} />
             </div>
           </div>
         )}
