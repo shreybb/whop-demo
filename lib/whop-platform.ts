@@ -158,17 +158,44 @@ export async function createCheckoutForOrder(input: {
   }
 }
 
-/** Manual payout to a connected account. */
+/**
+ * Manual payout to a connected account.
+ *
+ * `withdrawals.create` requires a `payout_method_id` at runtime even though
+ * the SDK types mark it optional (confirmed live: omitting it 400s with
+ * "Please provide a payout_method_id"). There's no way to create a payout
+ * method via the API — it's only added through the hosted payouts-portal
+ * link (`createAccountLink` with `payouts_portal`) — so look up the
+ * account's default one and fail with a clear, actionable message if none
+ * exists yet, instead of surfacing Whop's raw error.
+ */
 export async function payoutConnectedAccount(input: {
   companyId: string;
   amountCents: number;
   currency: string;
 }): Promise<{ withdrawalId: string }> {
+  const rest = getWhopRest();
+  let payoutMethodId: string;
   try {
-    const withdrawal = await getWhopRest().withdrawals.create({
+    const methods = await rest.payoutMethods.list({ company_id: input.companyId });
+    const items = methods.data ?? [];
+    const method = items.find((m) => m.is_default) ?? items[0];
+    if (!method) {
+      throw new Error(
+        "No payout method on file yet. Add one via the payout portal, then try again.",
+      );
+    }
+    payoutMethodId = method.id;
+  } catch (err) {
+    throw wrap("payoutConnectedAccount (looking up payout method)", err);
+  }
+
+  try {
+    const withdrawal = await rest.withdrawals.create({
       company_id: input.companyId,
       amount: input.amountCents / 100,
       currency: input.currency as never,
+      payout_method_id: payoutMethodId,
       platform_covers_fees: true,
     });
     return { withdrawalId: withdrawal.id };
