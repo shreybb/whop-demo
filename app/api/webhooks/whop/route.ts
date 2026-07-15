@@ -1,8 +1,8 @@
-import { getWebhookValidator } from "@/lib/whop";
+import { validateWebhookRequest } from "@/lib/whop";
 import { getSupabase } from "@/lib/supabase";
 import { processEvent } from "@/lib/process-event";
 import { eventAction } from "@/lib/state-machine";
-import type { WhopWebhookRequestBody } from "@whop/api";
+import type Whop from "@whop/sdk";
 
 /**
  * Whop webhook ingestion endpoint.
@@ -29,17 +29,9 @@ export async function POST(req: Request): Promise<Response> {
   // so treat it as merely "claimed" for now.
   const claimedEventId = req.headers.get("webhook-id");
 
-  let event: WhopWebhookRequestBody;
+  let event: Whop.UnwrapWebhookEvent;
   try {
-    // Rebuild a Request so the validator can read the (already consumed) body.
-    const validate = getWebhookValidator();
-    event = await validate(
-      new Request(req.url, {
-        method: "POST",
-        headers: req.headers,
-        body: rawBody,
-      }),
-    );
+    event = validateWebhookRequest(rawBody, Object.fromEntries(req.headers));
   } catch (err) {
     // Do NOT key this row by the claimed webhook-id. A forged request could
     // pre-insert a real event's id and cause the genuine, signed delivery to be

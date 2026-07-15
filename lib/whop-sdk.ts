@@ -2,15 +2,13 @@ import Whop from "@whop/sdk";
 import { env } from "@/lib/env";
 
 /**
- * `@whop/sdk` REST client for platform / Experimental operations that are NOT
- * available in the `@whop/api` GraphQL SDK:
- *   - connected-account creation (companies.create)
- *   - hosted KYC + payout portal links (accountLinks.create)
- *   - checkout configurations with per-order metadata (checkoutConfigurations.create)
- *   - product + plan creation (products.create / plans.create)
- *   - manual payouts (withdrawals.create)
+ * `@whop/sdk` REST client — the only Whop SDK this project depends on. Used
+ * for every outbound platform/Experimental call (connected accounts, hosted
+ * KYC/payout links, checkout configurations, products/plans, payouts) AND
+ * for inbound webhook verification (`webhooks.unwrap()`, see lib/whop.ts).
  *
- * See README "Whop API usage" for why two SDKs are used.
+ * See README "Whop API usage" for why this project used to also depend on
+ * `@whop/api`, and why that turned out to be a real blocker for webhooks.
  * Lazily constructed so importing this module doesn't require env at build time.
  */
 let client: Whop | null = null;

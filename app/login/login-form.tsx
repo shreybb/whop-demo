@@ -1,33 +1,26 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { sendMagicLink, type LoginResult } from "./actions";
+import { useRouter } from "next/navigation";
+import { signIn, type LoginResult } from "./actions";
 
 export function LoginForm({ next }: { next?: string }) {
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<LoginResult | null>(null);
+  const router = useRouter();
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      setResult(await sendMagicLink(email, next));
+      const res = await signIn(email, password, next);
+      if (res.ok && res.redirectTo) {
+        router.push(res.redirectTo);
+      } else {
+        setResult(res);
+      }
     });
-  }
-
-  if (result?.ok) {
-    return (
-      <div className="rounded-lg border border-border bg-white p-4">
-        <p className="text-sm font-medium text-foreground">Check your email</p>
-        <p className="mt-1 text-sm text-muted-foreground">{result.message}</p>
-        <button
-          onClick={() => setResult(null)}
-          className="mt-3 text-xs text-muted-foreground underline hover:text-foreground"
-        >
-          Use a different email
-        </button>
-      </div>
-    );
   }
 
   return (
@@ -47,12 +40,23 @@ export function LoginForm({ next }: { next?: string }) {
           className="mt-1 rounded-md border border-border px-3 py-2 text-sm text-foreground"
         />
       </label>
+      <label className="flex flex-col text-xs text-muted-foreground">
+        Password
+        <input
+          type="password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          className="mt-1 rounded-md border border-border px-3 py-2 text-sm text-foreground"
+        />
+      </label>
       <button
         type="submit"
         disabled={pending}
         className="rounded-md bg-foreground px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
       >
-        {pending ? "Sending…" : "Send magic link"}
+        {pending ? "Signing in…" : "Sign in"}
       </button>
       {result && !result.ok && (
         <p className="text-xs text-red-700">{result.message}</p>

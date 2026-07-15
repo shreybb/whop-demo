@@ -47,7 +47,6 @@ test("terminal states are final and never transition again", () => {
 
 test("actionToTargetState maps Whop actions to order states", () => {
   assert.equal(actionToTargetState("payment.succeeded"), "paid");
-  assert.equal(actionToTargetState("app_payment.succeeded"), "paid");
   assert.equal(actionToTargetState("payment.failed"), "failed");
   assert.equal(actionToTargetState("refund.created"), "refunded");
   assert.equal(actionToTargetState("refund.updated"), "refunded");

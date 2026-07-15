@@ -1,4 +1,4 @@
-import type { WhopWebhookRequestBody } from "@whop/api";
+import type Whop from "@whop/sdk";
 
 /**
  * Pure order state machine — no I/O, no dependencies, fully unit-testable.
@@ -42,24 +42,23 @@ export function canTransition(from: OrderState, to: OrderState): boolean {
 }
 
 /**
- * Map a Whop webhook action to the order state it should drive (or null).
+ * Map a Whop webhook event type to the order state it should drive (or null).
  *
- * Accepts BOTH naming schemes: the `@whop/api` typed union uses dots
- * ("payment.succeeded") while the v1 REST webhook catalog (what the
- * dashboard's 41-event list configures) uses underscores
- * ("payment_succeeded"). Typed as string so either can flow through.
+ * `Whop.WebhookEvent["type"]` values are dotted ("payment.succeeded"),
+ * confirmed against a real captured delivery. Also accepts the equivalent
+ * underscored spelling ("payment_succeeded") some Whop surfaces (e.g. the
+ * dashboard's event picker) use for the same events — harmless redundancy,
+ * not a second real format.
  */
 export function actionToTargetState(
-  action: WhopWebhookRequestBody["action"] | (string & {}),
+  type: Whop.WebhookEvent | (string & {}),
 ): OrderState | null {
-  switch (action) {
+  switch (type) {
     case "payment.succeeded":
     case "payment_succeeded":
-    case "app_payment.succeeded":
       return "paid";
     case "payment.failed":
     case "payment_failed":
-    case "app_payment.failed":
       return "failed";
     case "refund.created":
     case "refund_created":
@@ -71,13 +70,10 @@ export function actionToTargetState(
   }
 }
 
-/**
- * Pull the action name off a webhook body regardless of payload vintage:
- * `action` (@whop/api app-webhook shape) or `type`/`event` (v1 REST shape).
- */
+/** Pull the event type off a webhook body: `type` (current), `action` (legacy). */
 export function eventAction(event: unknown): string {
   const e = event as Record<string, unknown> | null;
-  const candidate = e?.action ?? e?.type ?? e?.event;
+  const candidate = e?.type ?? e?.action ?? e?.event;
   return typeof candidate === "string" && candidate ? candidate : "unknown";
 }
 

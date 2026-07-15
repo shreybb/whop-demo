@@ -143,38 +143,43 @@ connected-accounts enabled** to execute end to end.
 
 ## Whop API usage — Experimental vs Stable (graded)
 
-The spec named `@whop/api`. In practice the work spans **two** official packages, and I
-used each for what it actually supports:
+Every Whop operation in this app — outbound (connected accounts, hosted KYC/payout
+links, products/plans, checkout configurations, withdrawals) and inbound (webhook
+verification) — goes through **one** package: `@whop/sdk`, the REST client for
+Whop's Experimental platform surface (`lib/whop-sdk.ts`, `lib/whop-platform.ts`,
+`lib/whop.ts`).
 
-| Capability | Package / API | Notes |
-| --- | --- | --- |
-| Webhook validation | `@whop/api` · `makeWebhookValidator` | Exactly as the spec intends. |
-| Order-side types (`PaymentWebhookData`, action union) | `@whop/api` | Verified against installed `.d.ts`. |
-| Connected accounts, hosted KYC / payout portal, products/plans, checkout configs, withdrawals | `@whop/sdk` (REST platform client — **Experimental**) | **Not present in `@whop/api`'s GraphQL SDK.** These platform/connected-account operations only exist in `@whop/sdk`, which is the Experimental platform surface. |
+**Blocker found and fixed: `@whop/api` doesn't validate this project's real webhook
+deliveries.** The app originally used `@whop/api`'s `makeWebhookValidator` for
+webhook signature checking, matching the spec's stated package name. It compiled
+fine and looked correct — but a live sandbox purchase proved otherwise: Whop
+delivered 3 real webhook events, and `makeWebhookValidator` rejected every one with
+`"Missing header containing signature."` `@whop/api` is built for a different
+(GraphQL app-webhook) delivery mechanism than the `webhook-id` /
+`webhook-timestamp` / `webhook-signature` headers Whop's current v1 REST webhook
+system actually sends (confirmed against `docs.whop.com/developer/guides/webhooks`,
+which documents `@whop/sdk`'s `webhooks.unwrap()` — a Standard Webhooks verifier —
+as the current method). The fix: verify via `@whop/sdk`'s `webhooks.unwrap()`
+instead, with the dashboard-issued secret base64-encoded first (per that doc). This
+also surfaced a second, quieter bug the type mismatch had been hiding: the payment
+amount field is `total`, not `final_amount` — `@whop/api`'s stale typed union had
+the wrong field name, so `amount_cents` would have silently written `null` on
+every real payment even if signatures had validated. `@whop/api` is no longer a
+dependency of this project — one SDK now covers everything.
 
-**Why two SDKs:** `@whop/api` is the GraphQL "app" SDK — great for webhook validation
-and app-scoped payments, but it has **no** connected-account creation, account links,
-or withdrawals. Those platform operations live in `@whop/sdk`'s resource client
-(`companies`, `accountLinks`, `products`, `plans`, `checkoutConfigurations`,
-`withdrawals`). Per the spec's "prefer Experimental endpoints," Components 2–4 use the
-`@whop/sdk` Experimental platform client; Component 1 uses `@whop/api` as specified.
-
-**Stable fallback used:** none required — every operation had a supported SDK method.
-The only mapping approximation is `payout_status` (`getConnectedAccountStatus`), which
-coarsely maps Whop's account readiness flags onto `not_started | pending_kyc | ready`.
+**Stable fallback used:** none required — every operation had a supported
+Experimental SDK method. The only mapping approximation is `payout_status`
+(`getConnectedAccountStatus`), which coarsely maps Whop's account readiness flags
+onto `not_started | pending_kyc | ready`.
 
 ### API version pinning
 
-Whop versions its API in two places, and both are pinned here:
-
-- **SDK / API surface** — the generated clients target a fixed API version baked into
-  each release, so both SDKs are pinned to **exact** versions in `package.json`
-  (`@whop/api` `0.0.51`, `@whop/sdk` `0.0.40`) — no `^`, so the API surface can't drift
-  under us on install. The REST client also uses `maxRetries: 2` for transient failures.
-- **Webhook payload version** — a Whop webhook has its own `api_version` (`v1|v2|v5`)
-  that determines the payload shape. The `WhopWebhookRequestBody` types this app parses
-  correspond to the current version; create the webhook with the matching API version so
-  the `action` + `data` shapes line up with `lib/orders.ts`.
+- **SDK / API surface** — `@whop/sdk` is pinned to an **exact** version in
+  `package.json` (`0.0.40`, no `^`), so the API surface can't drift under us on
+  install. The REST client also uses `maxRetries: 2` for transient failures.
+- **Webhook payload version** — every captured delivery carries `api_version: "v1"`;
+  the `Whop.UnwrapWebhookEvent` union this app parses (`lib/orders.ts`) is generated
+  from `@whop/sdk`'s v1 OpenAPI spec, so the two stay in lockstep by construction.
 
 ---
 

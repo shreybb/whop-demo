@@ -1,4 +1,4 @@
-import type { WhopWebhookRequestBody } from "@whop/api";
+import type Whop from "@whop/sdk";
 import { advanceOrderState, resolveOrderId } from "@/lib/orders";
 
 export type ProcessResult =
@@ -15,7 +15,7 @@ export type ProcessResult =
  * and by the dashboard "replay" action with identical behavior.
  */
 export async function processEvent(
-  event: WhopWebhookRequestBody,
+  event: Whop.UnwrapWebhookEvent,
 ): Promise<ProcessResult> {
   const orderId = await resolveOrderId(event);
   if (!orderId) {

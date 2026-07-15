@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import type { WhopWebhookRequestBody } from "@whop/api";
+import type Whop from "@whop/sdk";
 import { getSupabase } from "@/lib/supabase";
 import { processEvent } from "@/lib/process-event";
 import { transitionOrder, type OrderState } from "@/lib/orders";
@@ -31,7 +31,7 @@ export async function replayEvent(id: string): Promise<ActionResult> {
   }
 
   try {
-    const result = await processEvent(data.payload as WhopWebhookRequestBody);
+    const result = await processEvent(data.payload as Whop.UnwrapWebhookEvent);
     await supabase
       .from("webhook_events")
       .update({

@@ -1,4 +1,4 @@
-import type { WhopWebhookRequestBody } from "@whop/api";
+import type Whop from "@whop/sdk";
 import { getSupabase } from "@/lib/supabase";
 import {
   actionToTargetState,
@@ -41,7 +41,7 @@ export interface AdvanceResult {
  */
 export async function advanceOrderState(
   orderId: string,
-  event: WhopWebhookRequestBody,
+  event: Whop.UnwrapWebhookEvent,
 ): Promise<AdvanceResult> {
   const target = actionToTargetState(eventAction(event));
   if (!target) {
@@ -122,18 +122,22 @@ export async function transitionOrder(
   return { applied: true, from, to, reason: "applied" };
 }
 
-/** Persist payment/refund facts alongside the state change (immutable patch). */
-function buildPatch(event: WhopWebhookRequestBody): Record<string, unknown> {
+/**
+ * Persist payment/refund facts alongside the state change (immutable patch).
+ *
+ * Field names verified against a real captured sandbox delivery: a Payment's
+ * charged amount is `total` (decimal currency units), NOT `final_amount` —
+ * that field doesn't exist on `Shared.Payment`. `final_amount` was a holdover
+ * from `@whop/api`'s (unused, now-removed) typed union; the mismatch would
+ * have silently written `amount_cents: null` on every payment.
+ */
+function buildPatch(event: Whop.UnwrapWebhookEvent): Record<string, unknown> {
   const action = eventAction(event);
-  if (
-    action === "payment.succeeded" ||
-    action === "payment_succeeded" ||
-    action === "app_payment.succeeded"
-  ) {
-    const data = event.data as { id?: string; final_amount?: number };
+  if (action === "payment.succeeded" || action === "payment_succeeded") {
+    const data = event.data as { id?: string; total?: number | null };
     return {
       whop_payment_id: data.id,
-      amount_cents: toCents(data.final_amount),
+      amount_cents: toCents(data.total),
     };
   }
   if (action.startsWith("refund.") || action.startsWith("refund_")) {
@@ -150,10 +154,11 @@ function buildPatch(event: WhopWebhookRequestBody): Record<string, unknown> {
 
 /**
  * Pull the refund id + amount from a refund event. Refund payloads carry their
- * own `id` and `amount`, and nest the original `payment` (see whop-sdk-api-surface);
- * we fall back to the payment's `final_amount` when the refund omits an explicit amount.
+ * own `id` and `amount`, and nest the original payment under `.payment`; we
+ * fall back to the nested payment's `total` when the refund omits an explicit
+ * amount (both confirmed field names, not `final_amount`).
  */
-function extractRefundInfo(event: WhopWebhookRequestBody): {
+function extractRefundInfo(event: Whop.UnwrapWebhookEvent): {
   refundId: string | null;
   refundedAmountCents: number | null;
 } {
@@ -164,8 +169,8 @@ function extractRefundInfo(event: WhopWebhookRequestBody): {
   const rawAmount =
     typeof data?.amount === "number"
       ? data.amount
-      : typeof payment?.final_amount === "number"
-        ? payment.final_amount
+      : typeof payment?.total === "number"
+        ? payment.total
         : null;
   return { refundId, refundedAmountCents: toCents(rawAmount) };
 }
@@ -175,7 +180,7 @@ function extractRefundInfo(event: WhopWebhookRequestBody): {
  * Refund/dispute events nest the original payment (with its metadata), so we
  * reach through `.payment` for those.
  */
-function extractEventRefs(event: WhopWebhookRequestBody): {
+function extractEventRefs(event: Whop.UnwrapWebhookEvent): {
   metadata: Record<string, unknown> | null;
   paymentId: string | null;
 } {
@@ -196,7 +201,7 @@ function extractEventRefs(event: WhopWebhookRequestBody): {
  * (`metadata.order_id`), fall back to a lookup by `whop_payment_id`.
  */
 export async function resolveOrderId(
-  event: WhopWebhookRequestBody,
+  event: Whop.UnwrapWebhookEvent,
 ): Promise<string | null> {
   const { metadata, paymentId } = extractEventRefs(event);
 
