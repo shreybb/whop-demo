@@ -14,8 +14,8 @@ export const metadata = { title: "My orders — CreatorJobs" };
  * only rows that can ever come back are ones with buyer_id = auth.uid().
  */
 export default async function MyOrdersPage() {
-  await requireUser();
-  const orders = await getMyOrders();
+  const profile = await requireUser();
+  const orders = await getMyOrders(profile.id);
 
   return (
     <div className="flex flex-col gap-6">

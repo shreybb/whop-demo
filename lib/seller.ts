@@ -62,14 +62,20 @@ export interface SellerOrder {
   listing: { id: string; title: string } | null;
 }
 
-/** Orders on the seller's listings — the work queue. */
-export async function getMySellerOrders(): Promise<SellerOrder[]> {
+/**
+ * Orders on the seller's listings — the work queue. Explicitly filtered by
+ * listing ownership: RLS policies OR together, so a seller who BUYS someone
+ * else's listing would otherwise see their own purchase here (the buyer
+ * policy grants the read). RLS stays as the cross-tenant backstop.
+ */
+export async function getMySellerOrders(sellerId: string): Promise<SellerOrder[]> {
   const { data, error } = await getSupabaseAuth()
     .from("orders")
     .select(
       "id, state, amount_cents, currency, buyer_email, deliverable_note, " +
-        "deliverable_url, created_at, updated_at, listing:listings(id, title)",
+        "deliverable_url, created_at, updated_at, listing:listings!inner(id, title, seller_id)",
     )
+    .eq("listing.seller_id", sellerId)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((row: any) => ({

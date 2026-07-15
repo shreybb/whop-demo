@@ -15,7 +15,7 @@ export default async function SellerOrdersPage() {
   if (!seller) {
     return <p className="text-sm text-muted-foreground">No seller profile found.</p>;
   }
-  const orders = await getMySellerOrders();
+  const orders = await getMySellerOrders(seller.id);
   const hasAccount = !!seller.whop_company_id;
   // Grey out Withdraw while platform funds are settling instead of letting a
   // doomed call run and surface an error.

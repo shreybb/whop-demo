@@ -56,8 +56,12 @@ export interface BuyerOrder {
   listing: { title: string; seller_name: string } | null;
 }
 
-/** The session buyer's orders — RLS does the scoping, not a WHERE clause. */
-export async function getMyOrders(): Promise<BuyerOrder[]> {
+/**
+ * The session user's purchases. Explicit buyer filter: RLS policies OR
+ * together, so a seller's SALES would otherwise leak into their purchase
+ * list via the seller read policy. RLS remains the cross-tenant backstop.
+ */
+export async function getMyOrders(buyerId: string): Promise<BuyerOrder[]> {
   const { data, error } = await getSupabaseAuth()
     .from("orders")
     .select(
@@ -65,6 +69,7 @@ export async function getMyOrders(): Promise<BuyerOrder[]> {
         "deliverable_note, deliverable_url, created_at, updated_at, " +
         "listing:listings(title, seller:sellers(name))",
     )
+    .eq("buyer_id", buyerId)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map(toBuyerOrder);

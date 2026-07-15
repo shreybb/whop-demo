@@ -20,7 +20,7 @@ export default async function SellerOverviewPage() {
   }
 
   const [orders, payouts] = await Promise.all([
-    getMySellerOrders(),
+    getMySellerOrders(seller.id),
     getMyPayouts(),
   ]);
   const stats = computeSellerStats(orders, payouts);
