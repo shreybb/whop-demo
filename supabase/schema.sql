@@ -195,3 +195,8 @@ create policy payouts_select_seller on payouts
   for select using (
     seller_id in (select id from sellers where profile_id = auth.uid())
   );
+
+-- The payout account (poact_...) behind a connected account. Captured from
+-- payout_account.status_updated webhooks; payoutAccounts.retrieve is keyed by
+-- THIS id, not the company id (retrieve-by-biz_ 404s — confirmed live).
+alter table sellers add column if not exists whop_payout_account_id text;

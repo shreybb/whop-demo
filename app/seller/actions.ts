@@ -30,6 +30,7 @@ interface SellerContext {
   name: string;
   email: string;
   whop_company_id: string | null;
+  whop_payout_account_id?: string | null;
 }
 
 /** Resolve the session user's seller row, or a failure message. */
@@ -43,7 +44,7 @@ async function requireSeller(): Promise<
   }
   const { data, error } = await getSupabase()
     .from("sellers")
-    .select("id, name, email, whop_company_id")
+    .select("id, name, email, whop_company_id, whop_payout_account_id")
     .eq("profile_id", profile.id)
     .maybeSingle();
   if (error) return { seller: null, error: error.message };
@@ -116,7 +117,10 @@ export async function refreshMyPayoutStatus(): Promise<Result> {
   if (!seller.whop_company_id) return fail("Create your connected account first.");
 
   try {
-    const { payoutStatus } = await getConnectedAccountStatus(seller.whop_company_id);
+    const { payoutStatus } = await getConnectedAccountStatus(
+      seller.whop_company_id,
+      seller.whop_payout_account_id,
+    );
     await getSupabase()
       .from("sellers")
       .update({ payout_status: payoutStatus })

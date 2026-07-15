@@ -120,9 +120,14 @@ export async function createAccountLink(input: {
  */
 export async function getConnectedAccountStatus(
   companyId: string,
+  payoutAccountId?: string | null,
 ): Promise<{ payoutStatus: "not_started" | "pending_kyc" | "ready" }> {
   try {
-    const account = await getWhopRest().payoutAccounts.retrieve(companyId);
+    // Retrieve is keyed by the poact_ id (captured from webhooks); retrieving
+    // by company id 404s even when the payout account exists — confirmed live.
+    const account = await getWhopRest().payoutAccounts.retrieve(
+      payoutAccountId || companyId,
+    );
     return { payoutStatus: mapPayoutStatus(account.status) };
   } catch (err) {
     if (err instanceof Whop.NotFoundError) {
@@ -132,7 +137,7 @@ export async function getConnectedAccountStatus(
   }
 }
 
-function mapPayoutStatus(
+export function mapPayoutStatus(
   status: Whop.PayoutAccountCalculatedStatuses | null,
 ): "not_started" | "pending_kyc" | "ready" {
   switch (status) {
