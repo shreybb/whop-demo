@@ -12,7 +12,7 @@ export default function LoginPage({
       <div>
         <h1 className="text-2xl font-semibold text-foreground">CreatorJobs</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Sign in with your email and password. New here? You&apos;ll pick your
+          Sign in — or create an account below. New here? You&apos;ll pick your
           role right after.
         </p>
       </div>

@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { signIn, type LoginResult } from "./actions";
+import { signIn, signUp, type LoginResult } from "./actions";
 
 export function LoginForm({ next }: { next?: string }) {
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [pending, startTransition] = useTransition();
@@ -14,7 +15,8 @@ export function LoginForm({ next }: { next?: string }) {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const res = await signIn(email, password, next);
+      const fn = mode === "signin" ? signIn : signUp;
+      const res = await fn(email, password, next);
       if (res.ok && res.redirectTo) {
         router.push(res.redirectTo);
       } else {
@@ -45,9 +47,10 @@ export function LoginForm({ next }: { next?: string }) {
         <input
           type="password"
           required
+          minLength={mode === "signup" ? 8 : undefined}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
+          placeholder={mode === "signup" ? "8+ characters" : "••••••••"}
           className="mt-1 rounded-md border border-border px-3 py-2 text-sm text-foreground"
         />
       </label>
@@ -56,11 +59,29 @@ export function LoginForm({ next }: { next?: string }) {
         disabled={pending}
         className="rounded-md bg-foreground px-3 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
       >
-        {pending ? "Signing in…" : "Sign in"}
+        {pending
+          ? mode === "signin"
+            ? "Signing in…"
+            : "Creating account…"
+          : mode === "signin"
+            ? "Sign in"
+            : "Create account"}
       </button>
       {result && !result.ok && (
         <p className="text-xs text-red-700">{result.message}</p>
       )}
+      <button
+        type="button"
+        onClick={() => {
+          setMode(mode === "signin" ? "signup" : "signin");
+          setResult(null);
+        }}
+        className="text-xs text-muted-foreground underline hover:text-foreground"
+      >
+        {mode === "signin"
+          ? "New here? Create an account"
+          : "Already have an account? Sign in"}
+      </button>
     </form>
   );
 }
