@@ -225,15 +225,22 @@ export async function deliverOrder(
   if (!trimmedNote && !trimmedUrl) {
     return fail("Attach a note or a link so the buyer gets something.");
   }
-  if (trimmedUrl && !/^https?:\/\//.test(trimmedUrl)) {
-    return fail("Deliverable link must be an http(s) URL.");
+  // Accept bare URLs like "drive.google.com/x" — normalize to https. Only
+  // reject explicit non-web schemes (javascript:, file:, etc.), which must
+  // never become a clickable link on the buyer's page.
+  let deliverableUrl = trimmedUrl;
+  if (deliverableUrl && !/^https?:\/\//i.test(deliverableUrl)) {
+    if (/^[a-z][a-z0-9+.-]*:/i.test(deliverableUrl)) {
+      return fail("That link type isn't supported — use a web address.");
+    }
+    deliverableUrl = `https://${deliverableUrl}`;
   }
 
   // Persist the deliverable first, then advance; if the transition is refused
   // (e.g. refunded meanwhile) the deliverable is still recorded for audit.
   const { error: updateError } = await getSupabase()
     .from("orders")
-    .update({ deliverable_note: trimmedNote, deliverable_url: trimmedUrl })
+    .update({ deliverable_note: trimmedNote, deliverable_url: deliverableUrl })
     .eq("id", orderId);
   if (updateError) return fail(updateError.message);
 

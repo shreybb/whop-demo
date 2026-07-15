@@ -1,5 +1,6 @@
 import { getMySeller, getMyPayouts } from "@/lib/seller";
-import { formatMoney, formatDateTime, shortId } from "@/lib/format";
+import { formatMoney, shortId } from "@/lib/format";
+import { LocalTime } from "@/app/_components/local-time";
 import { PayoutStatusBadge } from "@/app/_components/state-badge";
 import { PayoutPortalButton } from "../_components/payout-portal-button";
 import { FundsNotice } from "../_components/funds-notice";
@@ -61,7 +62,7 @@ export default async function SellerPayoutsPage() {
                     {p.whop_withdrawal_id ?? "—"}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
-                    {formatDateTime(p.created_at)}
+                    <LocalTime iso={p.created_at} />
                   </td>
                 </tr>
               ))}

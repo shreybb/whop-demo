@@ -10,7 +10,8 @@ import {
   type SellerRow,
   type ListingRow,
 } from "@/lib/queries";
-import { formatMoney, formatDateTime, shortId } from "@/lib/format";
+import { formatMoney, shortId } from "@/lib/format";
+import { LocalTime } from "@/app/_components/local-time";
 import { StateBadge, PayoutBadge, PayoutStatusBadge } from "@/app/_components/state-badge";
 import { OrderActions } from "./_components/order-actions";
 import { WebhookRow } from "./_components/webhook-row";
@@ -216,7 +217,7 @@ export default async function DashboardPage() {
                     )}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
-                    {formatDateTime(o.updated_at)}
+                    <LocalTime iso={o.updated_at} />
                   </td>
                   <td className="px-3 py-2 text-right">
                     <OrderActions orderId={o.id} state={o.state} />

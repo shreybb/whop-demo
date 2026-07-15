@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { getMyOrder } from "@/lib/marketplace";
-import { formatMoney, formatDateTime } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
+import { LocalTime } from "@/app/_components/local-time";
 import { StateBadge } from "@/app/_components/state-badge";
 import { OrderTimeline } from "./order-timeline";
 import { ApproveButton } from "./approve-button";
@@ -36,7 +37,7 @@ export default async function OrderDetailPage({
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               by {order.listing?.seller_name ?? "—"} · placed{" "}
-              {formatDateTime(order.created_at)}
+              <LocalTime iso={order.created_at} />
             </p>
           </div>
           <div className="text-right">

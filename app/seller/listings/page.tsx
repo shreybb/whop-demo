@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getMySeller, getMyListings } from "@/lib/seller";
-import { formatMoney, formatDateTime } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
+import { LocalTime } from "@/app/_components/local-time";
 import { Badge } from "@/components/ui/badge";
 import { ListingForm } from "../_components/listing-form";
 import { PublishButton } from "../_components/publish-button";
@@ -52,7 +53,7 @@ export default async function SellerListingsPage() {
                       </Badge>
                     </td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">
-                      {formatDateTime(l.created_at)}
+                      <LocalTime iso={l.created_at} />
                     </td>
                     <td className="px-3 py-2">
                       {published ? (
