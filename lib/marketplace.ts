@@ -57,12 +57,14 @@ export interface BuyerOrder {
 }
 
 /**
- * The session user's purchases. Explicit buyer filter: RLS policies OR
- * together, so a seller's SALES would otherwise leak into their purchase
- * list via the seller read policy. RLS remains the cross-tenant backstop.
+ * The session user's purchases. Service-role + explicit buyer filter (the
+ * caller passes the verified session id): the RLS client can't resolve the
+ * seller's display name — sellers rows are only self-readable — which
+ * rendered every purchase as "Unknown seller". Same authz-in-code pattern
+ * as the write paths.
  */
 export async function getMyOrders(buyerId: string): Promise<BuyerOrder[]> {
-  const { data, error } = await getSupabaseAuth()
+  const { data, error } = await getSupabase()
     .from("orders")
     .select(
       "id, state, amount_cents, currency, refunded_amount_cents, " +
@@ -75,8 +77,12 @@ export async function getMyOrders(buyerId: string): Promise<BuyerOrder[]> {
   return (data ?? []).map(toBuyerOrder);
 }
 
-export async function getMyOrder(id: string): Promise<BuyerOrder | null> {
-  const { data, error } = await getSupabaseAuth()
+/** One purchase, hard-scoped to the session buyer (foreign ids -> null/404). */
+export async function getMyOrder(
+  id: string,
+  buyerId: string,
+): Promise<BuyerOrder | null> {
+  const { data, error } = await getSupabase()
     .from("orders")
     .select(
       "id, state, amount_cents, currency, refunded_amount_cents, " +
@@ -84,6 +90,7 @@ export async function getMyOrder(id: string): Promise<BuyerOrder | null> {
         "listing:listings(title, seller:sellers(name))",
     )
     .eq("id", id)
+    .eq("buyer_id", buyerId)
     .maybeSingle();
   if (error) throw error;
   return data ? toBuyerOrder(data) : null;

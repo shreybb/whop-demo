@@ -16,9 +16,9 @@ export default async function OrderDetailPage({
 }: {
   params: { id: string };
 }) {
-  await requireUser();
-  // RLS scopes the read; a foreign order id 404s rather than leaking.
-  const order = await getMyOrder(params.id);
+  const profile = await requireUser();
+  // Hard-scoped to the session buyer; a foreign order id 404s rather than leaking.
+  const order = await getMyOrder(params.id, profile.id);
   if (!order) notFound();
 
   return (
