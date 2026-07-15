@@ -12,7 +12,11 @@ import type { OrderState } from "@/lib/state-machine";
 interface Props {
   orderId: string;
   state: OrderState;
-  payoutReady: boolean;
+  /**
+   * Payouts are ledger transfers into the seller's Whop balance, so the only
+   * prerequisite is a connected account — not a bank/payout method on file.
+   */
+  hasAccount: boolean;
 }
 
 /**
@@ -21,7 +25,7 @@ interface Props {
  *   in_progress -> Deliver (note/link form)
  *   completed   -> Withdraw
  */
-export function OrderWorkflow({ orderId, state, payoutReady }: Props) {
+export function OrderWorkflow({ orderId, state, hasAccount }: Props) {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<Result | null>(null);
   const [showDeliver, setShowDeliver] = useState(false);
@@ -64,8 +68,8 @@ export function OrderWorkflow({ orderId, state, payoutReady }: Props) {
         {state === "completed" && (
           <button
             onClick={() => run(() => withdrawForOrder(orderId))}
-            disabled={pending || !payoutReady}
-            title={payoutReady ? undefined : "Finish payout setup first"}
+            disabled={pending || !hasAccount}
+            title={hasAccount ? undefined : "Create your payout account first"}
             className="rounded-md bg-foreground px-2.5 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             {pending ? "Withdrawing…" : "Withdraw"}

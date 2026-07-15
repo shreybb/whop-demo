@@ -167,10 +167,34 @@ the wrong field name, so `amount_cents` would have silently written `null` on
 every real payment even if signatures had validated. `@whop/api` is no longer a
 dependency of this project — one SDK now covers everything.
 
-**Stable fallback used:** none required — every operation had a supported
-Experimental SDK method. The only mapping approximation is `payout_status`
-(`getConnectedAccountStatus`), which coarsely maps Whop's account readiness flags
-onto `not_started | pending_kyc | ready`.
+**Where each call sits (Experimental vs Stable), verified against the docs'
+OpenAPI source markers** (`api-v1-stable.json` vs the `/api-reference/beta/`
+"Experimental" pages):
+
+| Call | Tier |
+| --- | --- |
+| `plans.create` (listing pricing) | **Experimental** — the Plans resource has no Stable equivalent at all |
+| `transfers.create` (seller payout) | **Experimental** — primary payout path, see blocker below |
+| `companies.create`, `accountLinks.create`, `payoutAccounts.retrieve`, `products.create`, `checkoutConfigurations.create`, `payoutMethods.list`, `withdrawals.create`, `webhooks.unwrap` | Stable |
+
+**Blocker: Experimental ledger transfers don't work in the sandbox.** Whop's
+current platform quickstart pays sub-merchants with `transfers.create`
+(`type: "ledger"`, Experimental) — no payout method needed, funds land in the
+seller's Whop balance. This app implements exactly that as the primary payout
+path. The sandbox, however, rejects it in **every documented form** — with and
+without `type`, `biz_`/`ldgr_` origins, every supported `Api-Version-Date` up
+to `2026-07-08-1` — always with `"Sends are only supported from an Ethereum
+wallet"`, i.e. it routes all transfers to the crypto wallet-send path. Per the
+take-home's "note where you had to use Stable": `payoutConnectedAccount`
+(`lib/whop-platform.ts`) tries the Experimental transfer first and falls back
+to a Stable `withdrawals.create` **only** on that specific error, recording
+which path ran. The Stable path has its own documented quirk: it requires
+`payout_method_id` at runtime (despite the SDK typing it optional), and payout
+methods can only be added via the hosted portal — there's no API for it.
+
+The only mapping approximation is `payout_status`
+(`getConnectedAccountStatus`), which coarsely maps the payout account's
+calculated status onto `not_started | pending_kyc | ready`.
 
 ### API version pinning
 

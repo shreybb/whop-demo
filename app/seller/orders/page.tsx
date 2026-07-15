@@ -13,7 +13,7 @@ export default async function SellerOrdersPage() {
     return <p className="text-sm text-muted-foreground">No seller profile found.</p>;
   }
   const orders = await getMySellerOrders();
-  const payoutReady = seller.payout_status === "ready";
+  const hasAccount = !!seller.whop_company_id;
 
   return (
     <div className="flex flex-col gap-6">
@@ -63,7 +63,7 @@ export default async function SellerOrdersPage() {
                     <OrderWorkflow
                       orderId={o.id}
                       state={o.state}
-                      payoutReady={payoutReady}
+                      hasAccount={hasAccount}
                     />
                   </td>
                 </tr>

@@ -75,20 +75,23 @@ export async function executePayoutForOrder(
   }
 
   try {
-    const { withdrawalId } = await payoutConnectedAccount({
+    const { transferId } = await payoutConnectedAccount({
       companyId: seller.whop_company_id,
       amountCents,
       currency,
+      orderId,
     });
+    // Column predates the switch from withdrawals to ledger transfers; it now
+    // records the Whop transfer id (the money-movement reference either way).
     await supabase
       .from("payouts")
-      .update({ status: "sent", whop_withdrawal_id: withdrawalId, error: null })
+      .update({ status: "sent", whop_withdrawal_id: transferId, error: null })
       .eq("order_id", orderId);
     const t = await transitionOrder(orderId, "paid_out");
     if (!t.applied) {
       return { ok: false, message: `Payout sent but state unchanged (${t.reason}).` };
     }
-    return { ok: true, message: `Paid out (${withdrawalId}).` };
+    return { ok: true, message: `Paid out (${transferId}).` };
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
     // Withdrawal failed: mark the row failed so a later retry is allowed, and the

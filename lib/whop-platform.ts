@@ -159,22 +159,54 @@ export async function createCheckoutForOrder(input: {
 }
 
 /**
- * Manual payout to a connected account.
+ * Pay out a seller. Experimental-first with a Stable fallback:
  *
- * `withdrawals.create` requires a `payout_method_id` at runtime even though
- * the SDK types mark it optional (confirmed live: omitting it 400s with
- * "Please provide a payout_method_id"). There's no way to create a payout
- * method via the API — it's only added through the hosted payouts-portal
- * link (`createAccountLink` with `payouts_portal`) — so look up the
- * account's default one and fail with a clear, actionable message if none
- * exists yet, instead of surfacing Whop's raw error.
+ * 1. `transfers.create` (Experimental) — a ledger transfer from the
+ *    platform's balance to the seller's Whop balance. This is the method
+ *    Whop's own platform quickstart uses to pay sub-merchants, and it needs
+ *    no payout method: sellers cash out to their bank on their own schedule
+ *    via the hosted portal. `idempotence_key` = our order id, so even if the
+ *    payouts-ledger claim ever raced, Whop itself would dedupe.
+ *
+ * 2. `withdrawals.create` (Stable) — DOCUMENTED SANDBOX BLOCKER FALLBACK.
+ *    The sandbox rejects ledger transfers in every documented form ("Sends
+ *    are only supported from an Ethereum wallet" — with/without `type`,
+ *    biz_/ldgr_ origins, every supported Api-Version-Date up to 2026-07-08-1)
+ *    even though the current docs and quickstart say this exact call works.
+ *    Until that ships, fall back to a Stable withdrawal, which pushes to an
+ *    external payout method (must exist — hosted-portal-only to add) and
+ *    requires `payout_method_id` at runtime despite the SDK typing it
+ *    optional (also confirmed live).
  */
 export async function payoutConnectedAccount(input: {
   companyId: string;
   amountCents: number;
   currency: string;
-}): Promise<{ withdrawalId: string }> {
+  orderId: string;
+}): Promise<{ transferId: string; via: "transfer" | "withdrawal" }> {
   const rest = getWhopRest();
+  try {
+    const transfer = await rest.transfers.create({
+      origin_id: env.whopCompanyId(),
+      destination_id: input.companyId,
+      amount: input.amountCents / 100,
+      currency: input.currency as never,
+      idempotence_key: input.orderId,
+      metadata: { order_id: input.orderId, reason: "creatorjobs_seller_payout" },
+      notes: "CreatorJobs order payout",
+    });
+    return { transferId: transfer.id, via: "transfer" };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    // Only the specific sandbox gap falls through; real failures still throw.
+    if (!message.includes("Ethereum wallet")) {
+      throw wrap("payoutConnectedAccount", err);
+    }
+    console.warn(
+      "[whop-platform] Experimental ledger transfer unavailable in this environment; falling back to Stable withdrawal.",
+    );
+  }
+
   let payoutMethodId: string;
   try {
     const methods = await rest.payoutMethods.list({ company_id: input.companyId });
@@ -198,7 +230,7 @@ export async function payoutConnectedAccount(input: {
       payout_method_id: payoutMethodId,
       platform_covers_fees: true,
     });
-    return { withdrawalId: withdrawal.id };
+    return { transferId: withdrawal.id, via: "withdrawal" };
   } catch (err) {
     throw wrap("payoutConnectedAccount", err);
   }
