@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { SignOutButton } from "@/app/_components/sign-out-button";
+import { NavLink } from "@/app/_components/nav-link";
 
 /** Seller shell: hard role gate + portal nav. */
 export default async function SellerLayout({
@@ -17,22 +18,12 @@ export default async function SellerLayout({
           <Link href="/seller" className="text-lg font-semibold text-foreground">
             CreatorJobs <span className="text-muted-foreground">/ seller</span>
           </Link>
-          <nav className="flex gap-3 text-sm text-muted-foreground">
-            <Link href="/seller" className="hover:text-foreground">
-              Overview
-            </Link>
-            <Link href="/seller/listings" className="hover:text-foreground">
-              Listings
-            </Link>
-            <Link href="/seller/orders" className="hover:text-foreground">
-              Orders
-            </Link>
-            <Link href="/seller/payouts" className="hover:text-foreground">
-              Payouts
-            </Link>
-            <Link href="/" className="hover:text-foreground">
-              Marketplace
-            </Link>
+          <nav className="flex gap-3 text-sm">
+            <NavLink href="/seller" match="exact">Overview</NavLink>
+            <NavLink href="/seller/listings">Listings</NavLink>
+            <NavLink href="/seller/orders">Orders</NavLink>
+            <NavLink href="/seller/payouts">Payouts</NavLink>
+            <NavLink href="/" match="exact">Marketplace</NavLink>
           </nav>
         </div>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getProfile } from "@/lib/auth";
 import { SignOutButton } from "@/app/_components/sign-out-button";
+import { NavLink } from "@/app/_components/nav-link";
 
 /**
  * Public/buyer navigation. Adapts to the session:
@@ -15,24 +16,18 @@ export async function SiteHeader() {
         <Link href="/" className="text-lg font-semibold text-foreground">
           CreatorJobs
         </Link>
-        <nav className="flex gap-3 text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground">
+        <nav className="flex gap-3 text-sm">
+          <NavLink href="/" match="exact">
             Browse
-          </Link>
+          </NavLink>
           {profile?.role === "buyer" && (
-            <Link href="/orders" className="hover:text-foreground">
-              My orders
-            </Link>
+            <NavLink href="/orders">My orders</NavLink>
           )}
           {profile?.role === "seller" && (
-            <Link href="/seller" className="hover:text-foreground">
-              Seller portal
-            </Link>
+            <NavLink href="/seller">Seller portal</NavLink>
           )}
           {profile?.role === "admin" && (
-            <Link href="/admin" className="hover:text-foreground">
-              Admin
-            </Link>
+            <NavLink href="/admin">Admin</NavLink>
           )}
         </nav>
       </div>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { SignOutButton } from "@/app/_components/sign-out-button";
+import { NavLink } from "@/app/_components/nav-link";
 
 /**
  * Admin shell: hard role gate + section nav. `requireRole` redirects anyone
@@ -20,13 +21,9 @@ export default async function AdminLayout({
           <Link href="/admin" className="text-lg font-semibold text-foreground">
             CreatorJobs <span className="text-muted-foreground">/ admin</span>
           </Link>
-          <nav className="flex gap-3 text-sm text-muted-foreground">
-            <Link href="/admin" className="hover:text-foreground">
-              Overview
-            </Link>
-            <Link href="/" className="hover:text-foreground">
-              Marketplace
-            </Link>
+          <nav className="flex gap-3 text-sm">
+            <NavLink href="/admin" match="exact">Overview</NavLink>
+            <NavLink href="/" match="exact">Marketplace</NavLink>
           </nav>
         </div>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
