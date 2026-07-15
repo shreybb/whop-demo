@@ -236,10 +236,10 @@ export async function deliverOrder(
     .eq("id", orderId);
   if (updateError) return fail(updateError.message);
 
-  const t = await transitionOrder(orderId, "completed");
+  const t = await transitionOrder(orderId, "awaiting_approval");
   revalidatePath("/seller/orders");
   return t.applied
-    ? { ok: true, message: "Delivered. You can withdraw once you're ready." }
+    ? { ok: true, message: "Delivered — waiting for the buyer to approve." }
     : fail(`Deliverable saved but state unchanged (${t.reason}).`);
 }
 

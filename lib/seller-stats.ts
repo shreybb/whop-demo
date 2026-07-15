@@ -26,7 +26,10 @@ export function computeSellerStats(
   payouts: readonly StatPayout[],
 ): SellerStats {
   const activeOrders = orders.filter(
-    (o) => o.state === "paid" || o.state === "in_progress",
+    (o) =>
+      o.state === "paid" ||
+      o.state === "in_progress" ||
+      o.state === "awaiting_approval",
   ).length;
   const earnedCents = orders
     .filter((o) => o.state === "completed" || o.state === "paid_out")

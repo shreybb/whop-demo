@@ -5,6 +5,7 @@ const STATE_TONE: Record<OrderState, Tone> = {
   pending: "gray",
   paid: "blue",
   in_progress: "amber",
+  awaiting_approval: "purple",
   completed: "purple",
   paid_out: "green",
   failed: "red",

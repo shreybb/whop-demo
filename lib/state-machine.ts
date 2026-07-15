@@ -3,7 +3,7 @@ import type Whop from "@whop/sdk";
 /**
  * Pure order state machine — no I/O, no dependencies, fully unit-testable.
  *
- *   pending -> paid -> in_progress -> completed -> paid_out
+ *   pending -> paid -> in_progress -> awaiting_approval -> completed -> paid_out
  *   (any non-terminal state) -> failed | refunded   [terminal branches]
  */
 
@@ -11,6 +11,7 @@ export type OrderState =
   | "pending"
   | "paid"
   | "in_progress"
+  | "awaiting_approval"
   | "completed"
   | "paid_out"
   | "failed"
@@ -20,6 +21,7 @@ export const CHAIN: OrderState[] = [
   "pending",
   "paid",
   "in_progress",
+  "awaiting_approval",
   "completed",
   "paid_out",
 ];

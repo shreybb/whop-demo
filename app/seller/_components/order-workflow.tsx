@@ -42,6 +42,14 @@ export function OrderWorkflow({ orderId, state, hasAccount, fundsReady }: Props)
     return <span className="text-xs text-muted-foreground">Awaiting payment</span>;
   }
 
+  if (state === "awaiting_approval") {
+    return (
+      <span className="text-xs text-muted-foreground">
+        Waiting for buyer approval
+      </span>
+    );
+  }
+
   if (state === "paid_out" || state === "failed" || state === "refunded") {
     return <span className="text-xs text-muted-foreground">—</span>;
   }

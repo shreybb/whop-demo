@@ -5,7 +5,8 @@ const LABELS: Record<string, string> = {
   pending: "Order placed",
   paid: "Payment confirmed",
   in_progress: "Work started",
-  completed: "Delivered",
+  awaiting_approval: "Delivered — approve it",
+  completed: "Approved",
   paid_out: "Seller paid",
 };
 

@@ -5,6 +5,7 @@ import { getMyOrder } from "@/lib/marketplace";
 import { formatMoney, formatDateTime } from "@/lib/format";
 import { StateBadge } from "@/app/_components/state-badge";
 import { OrderTimeline } from "./order-timeline";
+import { ApproveButton } from "./approve-button";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,20 @@ export default async function OrderDetailPage({
           <p className="mt-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             Refunded: {formatMoney(order.refunded_amount_cents, order.currency)}
           </p>
+        )}
+
+        {order.state === "awaiting_approval" && (
+          <div className="mt-6 rounded-md border border-purple-200 bg-purple-50 p-4">
+            <h2 className="text-sm font-medium text-purple-900">
+              The seller marked this delivered
+            </h2>
+            <p className="mt-1 text-sm text-purple-900">
+              Review the work below, then approve to release it for payout.
+            </p>
+            <div className="mt-3">
+              <ApproveButton orderId={order.id} />
+            </div>
+          </div>
         )}
 
         {(order.deliverable_note || order.deliverable_url) && (
