@@ -55,8 +55,8 @@ export async function createConnectedAccount(input: {
   // back to companies.create) double-creates / collides on the name. Recover
   // the phantom account by email+title before creating anything else.
   try {
-    const list = await rest.accounts.list(beta);
-    const phantom = (list.data ?? []).find(
+    const list = await rest.accounts.list(null, beta);
+    const phantom = (list.accounts ?? []).find(
       (a) => a.email === input.email && a.title === input.name,
     );
     if (phantom) {
