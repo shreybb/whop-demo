@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getSupabase } from "@/lib/supabase";
 import { getProfile } from "@/lib/auth";
 import { transitionOrder } from "@/lib/orders";
+import { sanitizeWhopError } from "@/lib/format";
 import { executePayoutForOrder } from "@/lib/payouts";
 import {
   createConnectedAccount,
@@ -259,5 +260,5 @@ function fail(message: string): Result {
   return { ok: false, message };
 }
 function msg(e: unknown): string {
-  return e instanceof Error ? e.message : String(e);
+  return sanitizeWhopError(e instanceof Error ? e.message : String(e));
 }

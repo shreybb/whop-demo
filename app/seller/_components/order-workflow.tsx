@@ -17,6 +17,8 @@ interface Props {
    * prerequisite is a connected account — not a bank/payout method on file.
    */
   hasAccount: boolean;
+  /** False while platform funds are still settling — greys out Withdraw. */
+  fundsReady: boolean;
 }
 
 /**
@@ -25,7 +27,7 @@ interface Props {
  *   in_progress -> Deliver (note/link form)
  *   completed   -> Withdraw
  */
-export function OrderWorkflow({ orderId, state, hasAccount }: Props) {
+export function OrderWorkflow({ orderId, state, hasAccount, fundsReady }: Props) {
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<Result | null>(null);
   const [showDeliver, setShowDeliver] = useState(false);
@@ -68,8 +70,14 @@ export function OrderWorkflow({ orderId, state, hasAccount }: Props) {
         {state === "completed" && (
           <button
             onClick={() => run(() => withdrawForOrder(orderId))}
-            disabled={pending || !hasAccount}
-            title={hasAccount ? undefined : "Create your payout account first"}
+            disabled={pending || !hasAccount || !fundsReady}
+            title={
+              !hasAccount
+                ? "Create your payout account first"
+                : !fundsReady
+                  ? "Funds are still settling — payments can take up to 3 days"
+                  : undefined
+            }
             className="rounded-md bg-foreground px-2.5 py-1 text-xs font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             {pending ? "Withdrawing…" : "Withdraw"}

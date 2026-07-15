@@ -27,3 +27,15 @@ export function shortId(id: string | null | undefined, head = 8): string {
   if (!id) return "—";
   return id.length > head ? `${id.slice(0, head)}…` : id;
 }
+
+/**
+ * Strip internal operation prefixes ("Whop <op> failed:", possibly nested)
+ * from error text before it reaches a consumer-facing surface. Full raw
+ * errors still go to server logs at the point of failure.
+ */
+export function sanitizeWhopError(message: string): string {
+  let out = message;
+  const prefix = /^Whop \S+(?: \([^)]*\))? failed:\s*/;
+  while (prefix.test(out)) out = out.replace(prefix, "");
+  return out.replace(/^\d{3} \{.*\}$/s, "Something went wrong on Whop's side. Try again shortly.");
+}

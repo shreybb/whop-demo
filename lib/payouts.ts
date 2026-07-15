@@ -1,6 +1,7 @@
 import { getSupabase } from "@/lib/supabase";
 import { transitionOrder } from "@/lib/orders";
 import { payoutConnectedAccount } from "@/lib/whop-platform";
+import { sanitizeWhopError } from "@/lib/format";
 
 /**
  * Payout core, shared by the admin console and the seller's own
@@ -93,7 +94,7 @@ export async function executePayoutForOrder(
     }
     return { ok: true, message: `Paid out (${transferId}).` };
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
+    const message = sanitizeWhopError(e instanceof Error ? e.message : String(e));
     // Withdrawal failed: mark the row failed so a later retry is allowed, and the
     // failure is visible for reconciliation.
     await supabase

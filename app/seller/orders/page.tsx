@@ -3,6 +3,7 @@ import { formatMoney, formatDateTime, shortId } from "@/lib/format";
 import { StateBadge } from "@/app/_components/state-badge";
 import { OrderWorkflow } from "../_components/order-workflow";
 import { FundsNotice } from "../_components/funds-notice";
+import { getPlatformBalance } from "@/lib/whop-platform";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Orders — CreatorJobs seller" };
@@ -15,6 +16,16 @@ export default async function SellerOrdersPage() {
   }
   const orders = await getMySellerOrders();
   const hasAccount = !!seller.whop_company_id;
+  // Grey out Withdraw while platform funds are settling instead of letting a
+  // doomed call run and surface an error.
+  let availableCents = 0;
+  try {
+    availableCents = (await getPlatformBalance()).availableCents;
+  } catch {
+    // If the balance can't be read, leave withdraw enabled; the action itself
+    // still fails safely with a sanitized message.
+    availableCents = Number.MAX_SAFE_INTEGER;
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -67,6 +78,7 @@ export default async function SellerOrdersPage() {
                       orderId={o.id}
                       state={o.state}
                       hasAccount={hasAccount}
+                      fundsReady={availableCents >= (o.amount_cents ?? 0)}
                     />
                   </td>
                 </tr>
